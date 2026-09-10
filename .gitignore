@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.apk
+*.aab
+*.ap_
+
+# Android
+recipe-app-android/.gradle/
+recipe-app-android/.idea/
+recipe-app-android/local.properties
+recipe-app-android/app/build/
+recipe-app-android/app/release/
+recipe-app-android/*.iml
+recipe-app-android/gradle/wrapper/gradle-wrapper.jar
+
+# Web Admin
+recipe-admin-web/dist/
+recipe-admin-web/.vite/
+recipe-admin-web/.turbo/
+
+# Backend
+recipe-backend-api/dist/
+recipe-backend-api/.turbo/
+recipe-backend-api/.prisma/client/
+
+# Shared
+packages/shared/dist/
+
+# Turbo
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Prisma
+recipe-backend-api/prisma/migrations/
+
+# Misc
+*.tsbuildinfo
