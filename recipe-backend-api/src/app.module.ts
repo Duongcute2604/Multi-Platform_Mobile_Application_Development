@@ -6,6 +6,7 @@ import { IngredientsModule } from './modules/ingredients/ingredients.module';
 import { ExternalMetricsModule } from './modules/external-metrics/external-metrics.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { RecipesModule } from './modules/recipes/recipes.module';
     ExternalMetricsModule,
     AuthModule,
     RecipesModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
