@@ -4,6 +4,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RecipeReferencesModule } from './modules/recipe-references/recipe-references.module';
 import { IngredientsModule } from './modules/ingredients/ingredients.module';
 import { ExternalMetricsModule } from './modules/external-metrics/external-metrics.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { RecipesModule } from './modules/recipes/recipes.module';
 
 @Module({
   imports: [
@@ -12,6 +14,8 @@ import { ExternalMetricsModule } from './modules/external-metrics/external-metri
     RecipeReferencesModule,
     IngredientsModule,
     ExternalMetricsModule,
+    AuthModule,
+    RecipesModule,
   ],
 })
 export class AppModule {}
