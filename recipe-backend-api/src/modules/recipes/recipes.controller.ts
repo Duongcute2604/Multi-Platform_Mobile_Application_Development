@@ -11,6 +11,7 @@ import {
   Put,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -18,6 +19,9 @@ import { RecipesService } from './recipes.service';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { RecipeQueryDto } from './dto/recipe-query.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
+import { ActivityInterceptor } from '../activity/activity.interceptor';
+import { TrackActivity } from '../activity/track-activity.decorator';
 
 @ApiTags('Recipes')
 @Controller('recipes')
@@ -25,14 +29,22 @@ export class RecipesController {
   constructor(private readonly service: RecipesService) {}
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Danh sách công thức (phân trang, tìm kiếm hybrid)' })
-  findAll(@Query() query: RecipeQueryDto) {
-    return this.service.findAll(query);
+  // ADMIN gọi được để xem mọi trạng thái; user thường/login chỉ thấy APPROVED (BR-02)
+  findAll(
+    @Query() query: RecipeQueryDto,
+    @CurrentUser() user?: { role?: string },
+  ) {
+    return this.service.findAll(query, user?.role);
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
+  @UseInterceptors(ActivityInterceptor)
+  @TrackActivity('VIEW', 'RECIPE')
   @ApiOperation({ summary: 'Chi tiết công thức' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string, @CurrentUser() user?: { id: string }) {
     return this.service.findOne(id);
   }
 
@@ -40,6 +52,8 @@ export class RecipesController {
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
+  @UseInterceptors(ActivityInterceptor)
+  @TrackActivity('CREATE_RECIPE', 'RECIPE')
   @ApiOperation({ summary: 'Tạo công thức mới (trạng thái DRAFT)' })
   create(@Body() dto: CreateRecipeDto, @CurrentUser() user: { id: string }) {
     return this.service.create(dto, user.id);

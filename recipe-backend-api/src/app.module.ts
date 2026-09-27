@@ -7,6 +7,10 @@ import { ExternalMetricsModule } from './modules/external-metrics/external-metri
 import { AuthModule } from './modules/auth/auth.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { FoodCompatibilityModule } from './modules/food-compatibility/food-compatibility.module';
+import { ActivityModule } from './modules/activity/activity.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { MealPlansModule } from './modules/meal-plans/meal-plans.module';
 
 @Module({
   imports: [
@@ -18,6 +22,10 @@ import { AdminModule } from './modules/admin/admin.module';
     AuthModule,
     RecipesModule,
     AdminModule,
+    FoodCompatibilityModule,
+    ActivityModule,
+    AuditModule,
+    MealPlansModule,
   ],
 })
 export class AppModule {}

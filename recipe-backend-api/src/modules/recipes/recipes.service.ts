@@ -18,19 +18,27 @@ export class RecipesService {
   constructor(private prisma: PrismaService) {}
 
   // Không trả id (UUID) trong list/public endpoints -> FE tự tính STT = index + 1 + page * size
-  private readonly listSelect = {
-    title: true,
-    description: true,
-    thumbnailUrl: true,
-    cookTimeMinutes: true,
-    prepTimeMinutes: true,
-    servings: true,
-    status: true,
-    source: true,
-    rejectionReason: true,
-    createdAt: true,
-    updatedAt: true,
-  } satisfies Prisma.RecipeSelect;
+  // Riêng ADMIN: trả thêm id để thao tác duyệt/cấm (admin là endpoint nội bộ, không public)
+  private listSelect(viewerRole?: string) {
+    const select: Prisma.RecipeSelect = {
+      title: true,
+      description: true,
+      thumbnailUrl: true,
+      cookTimeMinutes: true,
+      prepTimeMinutes: true,
+      servings: true,
+      status: true,
+      source: true,
+      rejectionReason: true,
+      createdAt: true,
+      updatedAt: true,
+    };
+    if (viewerRole === Role.ADMIN) {
+      select.id = true;
+      select.author = { select: { displayName: true, email: true } };
+    }
+    return select;
+  }
 
   async findAll(query: RecipeQueryDto, viewerRole?: string) {
     const page = query.page ?? 0;
@@ -43,6 +51,7 @@ export class RecipesService {
     } else if (query.status) {
       where.status = query.status;
     }
+    // ViewerRole = ADMIN và không lọc status -> xem tất cả trạng thái (chưa xóa)
 
     if (query.search) {
       where.OR = [
@@ -64,7 +73,7 @@ export class RecipesService {
         skip: page * size,
         take: size,
         orderBy: { [query.sortBy]: query.sortDirection },
-        select: this.listSelect,
+        select: this.listSelect(viewerRole),
       }),
       this.prisma.recipe.count({ where }),
     ]);
