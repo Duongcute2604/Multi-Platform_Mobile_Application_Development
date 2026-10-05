@@ -243,11 +243,12 @@ export interface DanhSachDiCho {
   ngayCapNhat: string;
   cacMon: Array<{
     id: string;
-    ten: string;
-    dinhLuong: number;
+    nguyenLieuId: string | null;
+    tenGoc: string;
+    dinhLuong: string;
     donVi: string;
-    daMua: boolean;
-    sortOrder: number;
+    daChon: boolean;
+    thuTu: number;
   }>;
 }
 
@@ -281,22 +282,17 @@ export interface CapNhatDanhSachDto {
 }
 
 export interface MonMoiDto {
-  ten: string;
+  tenGoc: string;
   dinhLuong: number;
   donVi: string;
-  noiDungGoc?: string;
+  nguyenLieuId?: string;
 }
 
 export interface SuaMonDiChoDto {
-  ten?: string;
+  tenGoc?: string;
   dinhLuong?: number;
   donVi?: string;
-  daMua?: boolean;
-}
-
-export interface CapNhatDanhSachDto {
-  ten?: string;
-  trangThai?: string;
+  daChon?: boolean;
 }
 
 export async function layDanhSachDanhSachDiCho(trang: number = 0, kichThuoc: number = 20) {
@@ -336,12 +332,12 @@ export async function capNhatDanhSachDiCho(id: string, dto: { ten?: string; tran
   return res.data;
 }
 
-export async function themMonVaoDanhSach(id: string, dto: { ten: string; dinhLuong: number; donVi: string; noiDungGoc?: string }) {
+export async function themMonVaoDanhSach(id: string, dto: { tenGoc: string; dinhLuong: number; donVi: string; nguyenLieuId?: string }) {
   const res = await apiClient.post(`/shopping-lists/${id}/items`, dto);
   return res.data;
 }
 
-export async function suaMonTrongDanhSach(id: string, itemId: string, dto: { ten?: string; dinhLuong?: number; donVi?: string; daMua?: boolean }) {
+export async function suaMonTrongDanhSach(id: string, itemId: string, dto: { tenGoc?: string; dinhLuong?: number; donVi?: string; daChon?: boolean }) {
   const res = await apiClient.patch(`/shopping-lists/${id}/items/${itemId}`, dto);
   return res.data;
 }
