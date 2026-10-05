@@ -133,6 +133,7 @@ function ChiTietKeHoach({ keHoachId, khiDong }: { keHoachId: string; khiDong: ()
   const taoDiCho = useTaoTuKeHoachAn();
   const xoaMon = useXoaMonKhoiKeHoach(keHoachId);
   const suaMon = useCapNhatMonTrongKeHoach(keHoachId);
+  const router = useRouter();
   const [monMoiNgay, setMonMoiNgay] = useState<string | null>(null);
   // BR-SHOP: Tick chọn từng ngày T2..CN, null nghĩa là chọn hết (cả tuần)
   const [ngayDiCho, setNgayDiCho] = useState<string[] | null>(null);
@@ -171,7 +172,7 @@ function ChiTietKeHoach({ keHoachId, khiDong }: { keHoachId: string; khiDong: ()
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Kiểm tra tương tác món ăn"
-          onPress={() => router.push('/food-check')}
+          onPress={() => router.push('/(tabs)/food-check')}
           className="w-full rounded-2xl bg-primary p-4 flex-row items-center justify-center gap-3 shadow-sm"
         >
           <View className="h-10 w-10 items-center justify-center rounded-xl bg-white/20">

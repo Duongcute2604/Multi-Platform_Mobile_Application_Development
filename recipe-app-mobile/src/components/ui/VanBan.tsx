@@ -1,5 +1,5 @@
 import type { FC, ReactNode } from 'react';
-import { Text } from 'react-native';
+import { Text, type StyleProp, type TextStyle } from 'react-native';
 
 interface VanBanProps {
   children: ReactNode;
@@ -7,30 +7,34 @@ interface VanBanProps {
   soDongToiDa?: number;
   dam?: boolean;
   canLe?: 'trai' | 'giua';
+  /** Màu/kiểu chữ động (NativeWind không đổi được class màu theo biến). */
+  style?: StyleProp<TextStyle>;
 }
 
 // BR-UI: Chữ căn trái mặc định, canLe giua cho tiêu đề editorial
-export const BodyText: FC<VanBanProps> = ({ children, className = '', soDongToiDa, dam = false, canLe = 'trai' }) => (
+export const BodyText: FC<VanBanProps> = ({ children, className = '', soDongToiDa, dam = false, canLe = 'trai', style }) => (
   <Text
     className={`${canLe === 'giua' ? 'text-center' : 'text-left'} text-base text-neutral-900 ${dam ? 'font-semibold' : ''} ${className}`}
     numberOfLines={soDongToiDa}
+    style={style}
   >
     {children}
   </Text>
 );
 
 // BR-UI: Tiêu đề serif mực editorial đồng bộ web, chữ thường giữ sans
-export const TitleText: FC<VanBanProps> = ({ children, className = '', soDongToiDa, canLe = 'trai' }) => (
+export const TitleText: FC<VanBanProps> = ({ children, className = '', soDongToiDa, canLe = 'trai', style }) => (
   <Text
     className={`${canLe === 'giua' ? 'text-center' : 'text-left'} font-serif text-xl font-bold text-primary ${className}`}
     numberOfLines={soDongToiDa}
+    style={style}
   >
     {children}
   </Text>
 );
 
-export const CaptionText: FC<VanBanProps> = ({ children, className = '', soDongToiDa, canLe = 'trai' }) => (
-  <Text className={`${canLe === 'giua' ? 'text-center' : 'text-left'} text-xs text-neutral-500 ${className}`} numberOfLines={soDongToiDa}>
+export const CaptionText: FC<VanBanProps> = ({ children, className = '', soDongToiDa, canLe = 'trai', style }) => (
+  <Text className={`${canLe === 'giua' ? 'text-center' : 'text-left'} text-xs text-neutral-500 ${className}`} numberOfLines={soDongToiDa} style={style}>
     {children}
   </Text>
 );

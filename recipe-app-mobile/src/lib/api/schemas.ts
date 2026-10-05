@@ -126,3 +126,24 @@ export const danhSachDiChoSchema = z.object({
   trangThai: z.string(),
   cacMon: z.array(monDiChoSchema),
 });
+
+// BR-FOOD: backend đã tự ưu tiên CONFLICT khi một cặp khớp cả hai mức
+export const capDoTuongTacSchema = z.enum(['CONFLICT', 'HARMONIOUS', 'NEUTRAL']);
+
+export const capTayTuongTacSchema = z.object({
+  a: z.string(),
+  b: z.string(),
+  level: capDoTuongTacSchema,
+  note: z.string().nullable(),
+  source: z.string().nullable(),
+});
+
+export const ketQuaTuongTacSchema = z.object({
+  items: z.array(z.string()),
+  pairs: z.array(capTayTuongTacSchema),
+  summary: z.object({
+    conflicts: z.number(),
+    harmonious: z.number(),
+    neutrals: z.number(),
+  }),
+});

@@ -11,6 +11,8 @@ interface ONhapLieuProps {
   banPhim?: KeyboardTypeOptions;
   className?: string;
   bieuTuong?: ReactNode;
+  /** >0 bật nhập nhiều dòng (dùng khi cần gõ nhiều món, mỗi dòng 1 món). */
+  soDong?: number;
 }
 
 export const ONhapLieu: FC<ONhapLieuProps> = ({
@@ -23,6 +25,7 @@ export const ONhapLieu: FC<ONhapLieuProps> = ({
   banPhim = 'default',
   className = '',
   bieuTuong,
+  soDong = 0,
 }) => (
   <View className={className}>
     {nhan ? <Text className="mb-1 text-left text-sm font-medium text-neutral-700">{nhan}</Text> : null}
@@ -34,6 +37,9 @@ export const ONhapLieu: FC<ONhapLieuProps> = ({
         secureTextEntry={anChu}
         placeholder={goiY}
         keyboardType={banPhim}
+        multiline={soDong > 0}
+        numberOfLines={soDong || undefined}
+        textAlignVertical={soDong > 0 ? 'top' : 'center'}
         className={`rounded-xl border bg-white py-3 pr-4 text-left text-base text-neutral-900 ${
           bieuTuong ? 'pl-12' : 'px-4'
         } ${loi ? 'border-red-500' : 'border-neutral-300'}`}

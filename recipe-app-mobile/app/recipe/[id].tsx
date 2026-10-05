@@ -449,7 +449,7 @@ export default function ManHinhChiTietCongThuc() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Kiểm tra tương tác"
-              onPress={() => router.push('/food-check')}
+              onPress={() => router.push('/(tabs)/food-check')}
               className="h-9 w-9 items-center justify-center rounded-full bg-white/90"
             >
               <ShieldCheck size={18} color="#0A2533" />

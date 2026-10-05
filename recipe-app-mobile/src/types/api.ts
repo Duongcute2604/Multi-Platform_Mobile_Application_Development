@@ -126,3 +126,21 @@ export interface DanhGiaResponse {
   diemTrungBinh: number;
   tongSoDanhGia: number;
 }
+
+// BR-FOOD: Mức tương tác thực phẩm. CONFLICT = kỵ/độc (ưu tiên cảnh báo),
+// HARMONIOUS = hợp, NEUTRAL = trung tính.
+export type CapDoTuongTac = 'CONFLICT' | 'HARMONIOUS' | 'NEUTRAL';
+
+export interface CapTayTuongTac {
+  a: string;
+  b: string;
+  level: CapDoTuongTac;
+  note: string | null;
+  source: string | null;
+}
+
+export interface KetQuaTuongTac {
+  items: string[];
+  pairs: CapTayTuongTac[];
+  summary: { conflicts: number; harmonious: number; neutrals: number };
+}
