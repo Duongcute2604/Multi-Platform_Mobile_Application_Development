@@ -15,6 +15,7 @@ import { ShoppingListsModule } from './modules/shopping-lists/shopping-lists.mod
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { DanhMucModule } from './modules/danh-muc/danh-muc.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     RecommendationsModule,
     CommentsModule,
     ReportsModule,
+    DanhMucModule,
   ],
 })
 export class AppModule {}
