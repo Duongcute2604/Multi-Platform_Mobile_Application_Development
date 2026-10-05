@@ -57,8 +57,13 @@ function ChonMonChoNgay({
     size: 20,
     ...(nguoiDung?.id ? { tacGiaId: nguoiDung.id } : {}),
   });
+  // `GET /recipes` trả `content` (kiểu phân trang Spring), `GET /favorites` trả `noiDung` (tiếng Việt)
   const danhSachNguon =
-    nguon === 'da-luu' ? (daLuu.data?.noiDung ?? []) : nguon === 'cua-toi' ? (cuaToi.data?.noiDung ?? []) : (goiY.data?.noiDung ?? []);
+    nguon === 'da-luu'
+      ? (daLuu.data?.noiDung ?? [])
+      : nguon === 'cua-toi'
+        ? (cuaToi.data?.content ?? [])
+        : (goiY.data?.content ?? []);
 
   const luuMon = () => {
     if (!congThucChon || !ngay.trim()) return;
@@ -99,7 +104,7 @@ function ChonMonChoNgay({
               onPress={() => setCongThucChon(ct.id)}
               className={`rounded-xl border px-3 py-2 ${congThucChon === ct.id ? 'border-primary bg-accent-light' : 'border-neutral-200'}`}
             >
-              <BodyText soDongToiDa={1}>{ct.ten}</BodyText>
+              <BodyText soDongToiDa={1}>{ct.title}</BodyText>
             </Pressable>
           ))
         )}
@@ -244,7 +249,7 @@ function ChiTietKeHoach({ keHoachId, khiDong }: { keHoachId: string; khiDong: ()
                             {buoi.nhan}
                           </Text>
                           <BodyText soDongToiDa={1} className="mt-0.5 text-xs font-semibold">
-                            {mon.congThuc?.ten ?? 'Món đã xóa'}
+                            {mon.congThuc?.title ?? 'Món đã xóa'}
                           </BodyText>
                           <View className="mt-1 flex-row items-center justify-between">
                             <View className="flex-row items-center gap-2">

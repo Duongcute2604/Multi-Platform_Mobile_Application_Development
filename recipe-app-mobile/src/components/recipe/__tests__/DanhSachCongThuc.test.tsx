@@ -1,6 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import type { CongThuc } from '../../../types/api';
-import { DanhSachCongThuc } from '../DanhSachCongThuc';
+import { DanhSachCongThuc, type CongThucNgonDong } from '../DanhSachCongThuc';
 
 jest.mock('expo-image', () => {
   const { Image } = jest.requireActual('react-native');
@@ -13,29 +12,14 @@ jest.mock('lucide-react-native', () => {
   return { __esModule: true, Clock: Stub, Star: Stub, Users: Stub };
 });
 
-function taoCongThuc(id: string, ten: string): CongThuc {
+/** 5 field mà backend trả cho `GET /recipes` và `GET /recipes/:id/similar`. */
+function taoCongThuc(id: string, ten: string): CongThucNgonDong {
   return {
     id,
-    ten,
-    moTa: null,
-    anhThumbnail: null,
-    thoiGianNauPhut: 30,
-    thoiGianChuanBiPhut: null,
-    khauPhan: 2,
-    trangThai: 'APPROVED',
-    tacGia: {
-      id: 'u-1',
-      email: 'a@b.c',
-      tenHienThi: 'Bếp Nhà',
-      anhDaiDien: null,
-      vaiTro: 'USER',
-      trangThai: 'ACTIVE',
-    },
-    nguyenLieu: [],
-    cacBuoc: [],
-    dinhDuong: null,
-    ngayTao: '2026-01-01T00:00:00.000Z',
-    ngayCapNhat: '2026-01-01T00:00:00.000Z',
+    title: ten,
+    thumbnailUrl: null,
+    cookTimeMinutes: 30,
+    servings: 2,
   };
 }
 

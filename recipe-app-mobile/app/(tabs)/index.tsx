@@ -54,8 +54,8 @@ function layLoiChao(gio: number): string {
 }
 
 const HinhAnh: FC<{ ct: CongThuc }> = ({ ct }) =>
-  ct.anhThumbnail ? (
-    <Image source={{ uri: layUrlAnh(ct.anhThumbnail) }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+  ct.thumbnailUrl ? (
+    <Image source={{ uri: layUrlAnh(ct.thumbnailUrl) }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
   ) : (
     <View className="h-full w-full bg-mist" />
   );
@@ -74,17 +74,17 @@ const ThePhoBien: FC<{ ct: CongThuc; khiBam: () => void; daThich: boolean; khiTh
       </View>
       <View className="p-3">
         <Text className="text-left font-serif text-[15px] font-bold text-primary" numberOfLines={2}>
-          {ct.ten}
+          {ct.title}
         </Text>
         <View className="mt-2 flex-row items-center gap-3">
           <View className="flex-row items-center gap-1">
             <Flame size={13} color={MAU_SAC.MUTED} />
-            <CaptionText>{ct.dinhDuong ? `${ct.dinhDuong.calo} Kcal` : '— Kcal'}</CaptionText>
+            <CaptionText>{ct.nutrition ? `${ct.nutrition.calories} Kcal` : '— Kcal'}</CaptionText>
           </View>
           <View className="h-3 w-px bg-neutral-300" />
           <View className="flex-row items-center gap-1">
             <Timer size={13} color={MAU_SAC.MUTED} />
-            <CaptionText>{ct.thoiGianNauPhut} Min</CaptionText>
+            <CaptionText>{ct.cookTimeMinutes} Min</CaptionText>
           </View>
         </View>
       </View>
@@ -126,7 +126,8 @@ export default function ManHinhTrangChu() {
   });
 
   // BR-UI: Rail hiển thị phần còn lại sau món đầu danh sách nổi bật
-  const danhSachRail = (noiBat.data?.noiDung ?? []).slice(1);
+  // `GET /recipes` trả `content` (kiểu phân trang Spring), không phải `noiDung`
+  const danhSachRail = (noiBat.data?.content ?? []).slice(1);
 
   const denTimKiem = (tuKhoa?: string) =>
     tuKhoa
@@ -140,7 +141,7 @@ export default function ManHinhTrangChu() {
           <Sun size={22} color={MAU_SAC.TEAL} />
           <View className="flex-1">
             <TitleText className="text-xl">
-              {layLoiChao(new Date().getHours())}, {nguoiDung?.tenHienThi ?? 'Bạn'}
+              {layLoiChao(new Date().getHours())}, {nguoiDung?.displayName ?? 'Bạn'}
             </TitleText>
             <CaptionText>Hôm nay nấu món gì ấm cúng cho gia đình?</CaptionText>
           </View>
@@ -213,7 +214,7 @@ export default function ManHinhTrangChu() {
                 <ChefHat size={19} color={MAU_SAC.MUC} />
               </View>
               <View className="flex-1">
-                <NumberDisplay value={cuaToi.data?.tongSoPhanTu ?? 0} className="text-lg font-bold" />
+                <NumberDisplay value={cuaToi.data?.totalElements ?? 0} className="text-lg font-bold" />
                 <CaptionText>Của tôi</CaptionText>
               </View>
             </Pressable>
@@ -266,7 +267,7 @@ export default function ManHinhTrangChu() {
               </View>
             ) : (
               <View className="flex-row gap-3 pb-1">
-                {(phoBien.data?.noiDung ?? []).map((ct) => (
+                {(phoBien.data?.content ?? []).map((ct) => (
                   <ThePhoBienCoTim
                     key={ct.id}
                     ct={ct}

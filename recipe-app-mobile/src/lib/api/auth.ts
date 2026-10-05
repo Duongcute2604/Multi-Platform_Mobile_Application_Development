@@ -2,29 +2,50 @@ import type { ApiResponse, DangNhapResponse, NguoiDung } from '../../types/api';
 import { apiClient, goiApi } from './client';
 import { dangNhapResponseSchema, nguoiDungSchema } from './schemas';
 
+/**
+ * BR-AUTH: Tên field lấy đúng theo DTO backend (`email`, `password`,
+ * `displayName`). Trước đây gửi tiếng Việt (`matKhau`, `tenHienThi`) nên
+ * ValidationPipe với `forbidNonWhitelisted` chặn hết, đăng nhập không bao
+ * giờ được. Form trên màn hình vẫn dùng tên tiếng Việt, chỗ này là lớp dịch.
+ */
+export interface DangNhapPayload {
+  email: string;
+  matKhau: string;
+}
+
 export interface DangKyPayload {
   email: string;
   matKhau: string;
   tenHienThi: string;
 }
 
-export interface DangNhapPayload {
-  email: string;
-  matKhau: string;
+/** Backend trả `{ user, tokens }` — gộp lại thành object token phẳng cho store. */
+function tachTokens(duLieu: { user: NguoiDung; tokens: DangNhapResponse }): DangNhapResponse {
+  return duLieu.tokens;
 }
 
 export async function dangKy(payload: DangKyPayload): Promise<DangNhapResponse> {
   const duLieu = await goiApi(
-    apiClient.post('auth/register', { json: payload }).json<ApiResponse<DangNhapResponse>>(),
+    apiClient
+      .post('auth/register', {
+        json: {
+          email: payload.email,
+          password: payload.matKhau,
+          displayName: payload.tenHienThi,
+        },
+      })
+      .json<ApiResponse<{ user: NguoiDung; tokens: DangNhapResponse }>>(),
   );
-  return dangNhapResponseSchema.parse(duLieu);
+  return dangNhapResponseSchema.parse(tachTokens(duLieu));
 }
 
 export async function dangNhap(payload: DangNhapPayload): Promise<DangNhapResponse> {
   const duLieu = await goiApi(
-    apiClient.post('auth/login', { json: payload }).json<ApiResponse<DangNhapResponse>>(),
+    apiClient
+      .post('auth/login', { json: { email: payload.email, password: payload.matKhau } })
+      .json<ApiResponse<{ user: NguoiDung; tokens: DangNhapResponse }>>(),
   );
-  return dangNhapResponseSchema.parse(duLieu);
+  return dangNhapResponseSchema.parse(tachTokens(duLieu));
 }
 
 export async function layThongTinNguoiDung(): Promise<NguoiDung> {
@@ -32,7 +53,12 @@ export async function layThongTinNguoiDung(): Promise<NguoiDung> {
   return nguoiDungSchema.parse(duLieu);
 }
 
-// BR-AUTH: Quên mật khẩu — backend luôn trả lời chung để chống dò email
-export async function quenMatKhau(email: string): Promise<void> {
-  await goiApi(apiClient.post('auth/forgot-password', { json: { email } }).json<ApiResponse<unknown>>());
+/** BR-AUTH: Quên mật khẩu — backend luôn trả lời chung để chống dò email. */
+export async function quenMatKhau(email: string): Promise<string> {
+  const duLieu = await goiApi(
+    apiClient
+      .post('auth/forgot-password', { json: { email } })
+      .json<ApiResponse<{ message: string }>>(),
+  );
+  return duLieu.message;
 }

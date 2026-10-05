@@ -8,7 +8,7 @@ function taoMon(id: string, ngay: string, loaiBuoiAn: string, ten = 'Phở'): Mo
     loaiBuoiAn,
     khauPhan: 2,
     thuTu: 0,
-    congThuc: { id: `ct-${id}`, ten, anhThumbnail: null },
+    congThuc: { id: `ct-${id}`, title: ten, thumbnailUrl: null },
   };
 }
 

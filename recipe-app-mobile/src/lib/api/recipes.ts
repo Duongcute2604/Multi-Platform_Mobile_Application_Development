@@ -2,14 +2,27 @@ import type {
   ApiResponse,
   BinhLuan,
   CongThuc,
+  CongThucTomTat,
   DanhGiaResponse,
   DanhSachTrang,
+  TrangSpring,
 } from '../../types/api';
 import { KICH_THUOC_TRANG_MAC_DINH } from '../../constants/cau-hinh';
 import { apiClient, goiApi } from './client';
-import { binhLuanSchema, congThucSchema, danhSachTrangSchema } from './schemas';
+import {
+  binhLuanSchema,
+  congThucSchema,
+  congThucTomTatSchema,
+  danhSachTrangSchema,
+  trangSpringSchema,
+} from './schemas';
 
-const danhSachCongThucSchema = danhSachTrangSchema(congThucSchema);
+/**
+ * BR-UREC: Công thức backend dùng tên field tiếng Anh và trả phân trang kiểu
+ * Spring (`content`/`totalElements`). Module này là lớp dịch duy nhất, các
+ * màn hình bên dưới đọc đúng object đã parse.
+ */
+const congThucTrangSchema = trangSpringSchema(congThucSchema);
 
 export interface ThamSoDanhSachCongThuc {
   page?: number;
@@ -18,30 +31,31 @@ export interface ThamSoDanhSachCongThuc {
   tacGiaId?: string;
 }
 
+/** DTO tạo/sửa — đúng tên `CreateRecipeDto` của backend. */
 export interface NguyenLieuMoi {
-  ten: string;
-  dinhLuong: number;
-  donVi: string;
+  originalText: string;
+  quantity: number;
+  unit: string;
 }
 
 export interface BuocMoi {
-  noiDung: string;
+  content: string;
 }
 
 export interface TaoCongThucPayload {
-  ten: string;
-  moTa?: string;
-  anhThumbnail?: string;
-  thoiGianNauPhut: number;
-  thoiGianChuanBiPhut?: number;
-  khauPhan: number;
-  nguyenLieu: NguyenLieuMoi[];
-  cacBuoc: BuocMoi[];
+  title: string;
+  description?: string;
+  thumbnailUrl?: string;
+  cookTimeMinutes: number;
+  prepTimeMinutes?: number;
+  servings: number;
+  ingredients: NguyenLieuMoi[];
+  steps: BuocMoi[];
 }
 
 export async function layDanhSachCongThuc(
   thamSo: ThamSoDanhSachCongThuc = {},
-): Promise<DanhSachTrang<CongThuc>> {
+): Promise<TrangSpring<CongThuc>> {
   const duLieu = await goiApi(
     apiClient
       .get('recipes', {
@@ -49,12 +63,11 @@ export async function layDanhSachCongThuc(
           page: thamSo.page ?? 0,
           size: thamSo.size ?? KICH_THUOC_TRANG_MAC_DINH,
           ...(thamSo.search ? { search: thamSo.search } : {}),
-          ...(thamSo.tacGiaId ? { tacGiaId: thamSo.tacGiaId } : {}),
         },
       })
-      .json<ApiResponse<DanhSachTrang<CongThuc>>>(),
+      .json<ApiResponse<TrangSpring<CongThuc>>>(),
   );
-  return danhSachCongThucSchema.parse(duLieu);
+  return congThucTrangSchema.parse(duLieu);
 }
 
 export async function layChiTietCongThuc(id: string): Promise<CongThuc> {
@@ -62,26 +75,36 @@ export async function layChiTietCongThuc(id: string): Promise<CongThuc> {
   return congThucSchema.parse(duLieu);
 }
 
-export async function layCongThucTuongTu(id: string): Promise<DanhSachTrang<CongThuc>> {
+/** BR-REC: Công thức tương tự — backend trả mảng phẳng, không phân trang. */
+export interface CongThucTomTatGoiY {
+  id: string;
+  title: string;
+  thumbnailUrl: string | null;
+  cookTimeMinutes: number;
+  servings: number;
+  status: string;
+}
+
+export async function layCongThucTuongTu(id: string): Promise<CongThucTomTatGoiY[]> {
   const duLieu = await goiApi(
-    apiClient.get(`recipes/${id}/similar`).json<ApiResponse<DanhSachTrang<CongThuc>>>(),
+    apiClient.get(`recipes/${id}/similar`).json<ApiResponse<CongThucTomTatGoiY[]>>(),
   );
-  return danhSachCongThucSchema.parse(duLieu);
+  return duLieu ?? [];
 }
 
 export async function timKiemTheoNguyenLieu(
   nguyenLieu: string,
   soLuong = 10,
-): Promise<DanhSachTrang<CongThuc>> {
+): Promise<TrangSpring<CongThuc>> {
   const duLieu = await goiApi(
     apiClient
       .get('recipes/search/by-ingredients', { searchParams: { ingredients: nguyenLieu, number: soLuong } })
-      .json<ApiResponse<DanhSachTrang<CongThuc>>>(),
+      .json<ApiResponse<TrangSpring<CongThuc>>>(),
   );
-  return danhSachCongThucSchema.parse(duLieu);
+  return congThucTrangSchema.parse(duLieu);
 }
 
-// BR-UREC: Tạo/sửa/xóa công thức cá nhân
+// BR-UREC: Tạo/sửa/xóa công thức cá nhân. Sửa dùng `PUT` (backend không có PATCH).
 export async function taoCongThuc(payload: TaoCongThucPayload): Promise<CongThuc> {
   const duLieu = await goiApi(
     apiClient.post('recipes', { json: payload }).json<ApiResponse<CongThuc>>(),
@@ -94,7 +117,7 @@ export async function capNhatCongThuc(
   payload: Partial<TaoCongThucPayload>,
 ): Promise<CongThuc> {
   const duLieu = await goiApi(
-    apiClient.patch(`recipes/${id}`, { json: payload }).json<ApiResponse<CongThuc>>(),
+    apiClient.put(`recipes/${id}`, { json: payload }).json<ApiResponse<CongThuc>>(),
   );
   return congThucSchema.parse(duLieu);
 }
@@ -106,17 +129,25 @@ export async function xoaCongThuc(id: string): Promise<void> {
 // BR-UREC: Gửi duyệt bài nháp/bị từ chối lên hàng chờ PENDING
 export async function guiDuyetCongThuc(id: string): Promise<CongThuc> {
   const duLieu = await goiApi(
-    apiClient.post(`recipes/${id}/submit-review`).json<ApiResponse<CongThuc>>(),
+    apiClient.patch(`recipes/${id}/submit-review`).json<ApiResponse<CongThuc>>(),
   );
   return congThucSchema.parse(duLieu);
 }
 
-// BR-SOC: Yêu thích / đánh giá / bình luận
-export async function themYeuThich(id: string): Promise<void> {
-  await goiApi(apiClient.post(`recipes/${id}/favorite`).json<ApiResponse<unknown>>());
+// BR-SOC: Yêu thích — backend toggle, trả trạng thái sau cùng
+export interface KetQuaYeuThich {
+  yeuThich: boolean;
+  congThucId: string;
+  ten?: string;
 }
 
-// BR-SOC: Danh sách công thức đã yêu thích của chính người dùng
+export async function themYeuThich(id: string): Promise<KetQuaYeuThich> {
+  return goiApi(
+    apiClient.post(`recipes/${id}/favorite`).json<ApiResponse<KetQuaYeuThich>>(),
+  );
+}
+
+// BR-SOC: Danh sách công thức đã yêu thích (backend trả kiểu tiếng Việt)
 export async function layDanhSachYeuThich(
   thamSo: { page?: number; size?: number } = {},
 ): Promise<DanhSachTrang<CongThuc>> {
@@ -130,7 +161,7 @@ export async function layDanhSachYeuThich(
       })
       .json<ApiResponse<DanhSachTrang<CongThuc>>>(),
   );
-  return danhSachCongThucSchema.parse(duLieu);
+  return danhSachTrangSchema(congThucSchema).parse(duLieu);
 }
 
 export async function xoaYeuThich(id: string): Promise<void> {
@@ -143,6 +174,7 @@ export async function danhGiaCongThuc(id: string, diem: number): Promise<DanhGia
   );
 }
 
+// BR-SOC: Bình luận — backend dùng tên tiếng Việt `{ noiDung, tacGia.tenHienThi }`
 export async function layBinhLuan(
   id: string,
   page = 0,

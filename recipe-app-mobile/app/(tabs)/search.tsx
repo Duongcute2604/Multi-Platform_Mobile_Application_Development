@@ -73,9 +73,9 @@ export default function ManHinhTimKiem() {
   useEffect(() => {
     if (!data) return;
     setTichLuy((cu) => {
-      if (trang === 0) return data.noiDung;
+      if (trang === 0) return data.content;
       const daCo = new Set(cu.map((ct) => ct.id));
-      return [...cu, ...data.noiDung.filter((ct) => !daCo.has(ct.id))];
+      return [...cu, ...data.content.filter((ct) => !daCo.has(ct.id))];
     });
   }, [data, trang]);
 
@@ -86,23 +86,24 @@ export default function ManHinhTimKiem() {
       const tu = kieuAnChon.toLowerCase();
       ds = ds.filter(
         (ct) =>
-          ct.ten.toLowerCase().includes(tu) ||
-          (ct.moTa ?? '').toLowerCase().includes(tu),
+          ct.title.toLowerCase().includes(tu) ||
+          (ct.description ?? '').toLowerCase().includes(tu),
       );
     }
     if (gioiHanThoiGian !== undefined) {
       ds = ds.filter((ct) =>
-        chiChieuTren ? ct.thoiGianNauPhut <= gioiHanThoiGian : ct.thoiGianNauPhut >= gioiHanThoiGian,
+        chiChieuTren ? ct.cookTimeMinutes <= gioiHanThoiGian : ct.cookTimeMinutes >= gioiHanThoiGian,
       );
     }
-    if (khauPhanChon) ds = ds.filter((ct) => ct.khauPhan >= khauPhanChon);
-    if (sapXep === 'nhanh') ds.sort((a, b) => a.thoiGianNauPhut - b.thoiGianNauPhut);
+    if (khauPhanChon) ds = ds.filter((ct) => ct.servings >= khauPhanChon);
+    if (sapXep === 'nhanh') ds.sort((a, b) => a.cookTimeMinutes - b.cookTimeMinutes);
     return ds;
   }, [tichLuy, sapXep, kieuAnChon, gioiHanThoiGian, chiChieuTren, khauPhanChon]);
 
   const goiY = ketQua.slice(0, 3);
-  const tongSo = data?.tongSoPhanTu ?? 0;
-  const tongTrang = data?.tongSoTrang ?? 0;
+  // `GET /recipes` trả kiểu phân trang Spring: `content` + `totalElements`
+  const tongSo = data?.totalElements ?? 0;
+  const tongTrang = data?.totalPages ?? 0;
 
   useEffect(() => {
     boNhoCongThuc.layTuKhoa().then(setLichSu).catch(() => {});
@@ -193,11 +194,11 @@ export default function ManHinhTimKiem() {
               >
                 <View className="min-w-0 flex-1">
                   <Text className="text-left text-sm font-medium text-primary" numberOfLines={1}>
-                    {ct.ten}
+                    {ct.title}
                   </Text>
-                  {ct.nguyenLieu.length > 0 ? (
+                  {ct.ingredients.length > 0 ? (
                     <Text className="text-left text-xs text-neutral-500" numberOfLines={1}>
-                      Nguyên liệu: {ct.nguyenLieu.slice(0, 3).map((nl) => nl.ten).join(', ')}
+                      Nguyên liệu: {ct.ingredients.slice(0, 3).map((nl) => nl.originalText).join(', ')}
                     </Text>
                   ) : null}
                 </View>

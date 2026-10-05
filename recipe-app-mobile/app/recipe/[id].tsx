@@ -258,7 +258,7 @@ export default function ManHinhChiTietCongThuc() {
   // BR-UI: Chia sẻ công thức qua Share sheet của hệ điều hành
   const chiaSe = () => {
     if (!data) return;
-    Share.share({ message: `${data.ten}${data.moTa ? ` — ${data.moTa}` : ''}` }).catch(() => {});
+    Share.share({ message: `${data.title}${data.description ? ` — ${data.description}` : ''}` }).catch(() => {});
   };
   // BR-04: Khẩu phần người xem chọn để quy đổi định lượng (mặc định = khẩu phần gốc)
   // Cá nhân hóa: nhớ riêng từng món qua SecureStore để đi chợ dùng đúng
@@ -315,14 +315,15 @@ export default function ManHinhChiTietCongThuc() {
       </SafeAreaView>
     );
 
-  const laTacGia = nguoiDung?.id === data.tacGia.id;
-  const khauPhanHienTai = khauPhanChon ?? data.khauPhan;
-  const tiLeQuyDoi = data.khauPhan > 0 ? khauPhanHienTai / data.khauPhan : 1;
+  // Tác giả so bằng `authorId`; `author` chỉ có {displayName, email}
+  const laTacGia = nguoiDung?.id === data.authorId;
+  const khauPhanHienTai = khauPhanChon ?? data.servings;
+  const tiLeQuyDoi = data.servings > 0 ? khauPhanHienTai / data.servings : 1;
 
   const thanhPhanNguyenLieu = (
     <View>
       <View className="flex-row items-center justify-between">
-        <CaptionText className="font-medium">{data.nguyenLieu.length} món</CaptionText>
+        <CaptionText className="font-medium">{data.ingredients.length} món</CaptionText>
         <Pressable
           accessibilityRole="button"
           onPress={() => taoGioDiCho.mutate({ congThucId: maCongThuc, khauPhan: khauPhanHienTai })}
@@ -358,12 +359,12 @@ export default function ManHinhChiTietCongThuc() {
           </Pressable>
         </View>
       </View>
-      {data.nguyenLieu.map((nl, i) => (
+      {data.ingredients.map((nl) => (
         <HangNguyenLieu
-          key={i}
-          ten={nl.ten}
-          dinhLuong={nl.dinhLuong}
-          donVi={nl.donVi}
+          key={nl.id}
+          ten={nl.originalText}
+          dinhLuong={parseFloat(String(nl.quantity))}
+          donVi={nl.unit}
           tiLe={tiLeQuyDoi}
         />
       ))}
@@ -372,16 +373,16 @@ export default function ManHinhChiTietCongThuc() {
 
   const thanhPhanBuoc = (
     <View>
-      {data.cacBuoc.map((buoc) => (
-        <View key={buoc.thuTu} className="mt-3 flex-row gap-3">
+      {data.steps.map((buoc) => (
+        <View key={buoc.id} className="mt-3 flex-row gap-3">
           <View className="h-7 w-7 items-center justify-center rounded-full bg-accent-light">
-            <Text className="text-sm font-bold text-primary">{buoc.thuTu}</Text>
+            <Text className="text-sm font-bold text-primary">{buoc.stepOrder}</Text>
           </View>
           <View className="flex-1">
-            <BodyText>{buoc.noiDung}</BodyText>
-            {buoc.anhBuoc ? (
+            <BodyText>{buoc.content}</BodyText>
+            {buoc.imageUrl ? (
               <Image
-                source={{ uri: layUrlAnh(buoc.anhBuoc) }}
+                source={{ uri: layUrlAnh(buoc.imageUrl) }}
                 style={{ width: '100%', height: 160, borderRadius: 12, marginTop: 8 }}
                 contentFit="cover"
               />
@@ -389,24 +390,24 @@ export default function ManHinhChiTietCongThuc() {
           </View>
         </View>
       ))}
-      {data.dinhDuong ? (
+      {data.nutrition ? (
         <View className="mt-6 rounded-2xl bg-mist p-4">
           <BodyText dam>Dinh dưỡng</BodyText>
           <View className="mt-2 flex-row justify-between">
             <CaptionText>Calo</CaptionText>
-            <NumberDisplay value={data.dinhDuong.calo} unit="kcal" className="text-sm" />
+            <NumberDisplay value={data.nutrition.calories} unit="kcal" className="text-sm" />
           </View>
           <View className="mt-1 flex-row justify-between">
             <CaptionText>Protein</CaptionText>
-            <NumberDisplay value={parseFloat(String(data.dinhDuong.protein))} unit="g" className="text-sm" />
+            <NumberDisplay value={parseFloat(String(data.nutrition.protein))} unit="g" className="text-sm" />
           </View>
           <View className="mt-1 flex-row justify-between">
             <CaptionText>Carb</CaptionText>
-            <NumberDisplay value={parseFloat(String(data.dinhDuong.carb))} unit="g" className="text-sm" />
+            <NumberDisplay value={parseFloat(String(data.nutrition.carbs))} unit="g" className="text-sm" />
           </View>
           <View className="mt-1 flex-row justify-between">
             <CaptionText>Chất béo</CaptionText>
-            <NumberDisplay value={parseFloat(String(data.dinhDuong.chatBeo))} unit="g" className="text-sm" />
+            <NumberDisplay value={parseFloat(String(data.nutrition.fat))} unit="g" className="text-sm" />
           </View>
         </View>
       ) : null}
@@ -417,11 +418,11 @@ export default function ManHinhChiTietCongThuc() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1">
         <View className="relative">
-          {data.anhThumbnail ? (
-            <Image source={{ uri: layUrlAnh(data.anhThumbnail) }} style={{ width: '100%', height: 260 }} contentFit="cover" />
+          {data.thumbnailUrl ? (
+            <Image source={{ uri: layUrlAnh(data.thumbnailUrl) }} style={{ width: '100%', height: 260 }} contentFit="cover" />
           ) : (
             <View className="h-40 w-full items-center justify-center bg-cream">
-              <Text className="font-serif text-5xl font-black text-accent-dark">{data.ten.trim().charAt(0).toUpperCase()}</Text>
+              <Text className="font-serif text-5xl font-black text-accent-dark">{data.title.trim().charAt(0).toUpperCase()}</Text>
             </View>
           )}
           <View className="absolute left-4 top-4 flex-row gap-2">
@@ -458,31 +459,31 @@ export default function ManHinhChiTietCongThuc() {
         </View>
 
         <View className="px-4 pt-4">
-          <TitleText className="text-3xl" soDongToiDa={3}>{data.ten}</TitleText>
+          <TitleText className="text-3xl" soDongToiDa={3}>{data.title}</TitleText>
           <View className="mt-3 flex-row items-center gap-3">
-            <Avatar nguon={data.tacGia.anhDaiDien} ten={data.tacGia.tenHienThi} kichThuoc={40} />
+            <Avatar nguon={null} ten={data.author?.displayName ?? 'Ẩn danh'} kichThuoc={40} />
             <View className="flex-1">
-              <BodyText dam>{data.tacGia.tenHienThi}</BodyText>
-              <CaptionText>Tác giả công thức • {dinhDangNgay(data.ngayTao)}</CaptionText>
+              <BodyText dam>{data.author?.displayName ?? 'Ẩn danh'}</BodyText>
+              <CaptionText>Tác giả công thức • {dinhDangNgay(data.createdAt)}</CaptionText>
             </View>
           </View>
 
           <View className="mt-4 flex-row gap-2">
             <TheThongTin
               nhan="Chuẩn bị"
-              giaTri={data.thoiGianChuanBiPhut ? `${formatVn(data.thoiGianChuanBiPhut)} phút` : '—'}
+              giaTri={data.prepTimeMinutes ? `${formatVn(data.prepTimeMinutes)} phút` : '—'}
               Icon={Hourglass}
             />
-            <TheThongTin nhan="Nấu chín" giaTri={`${formatVn(data.thoiGianNauPhut)} phút`} Icon={Clock} />
+            <TheThongTin nhan="Nấu chín" giaTri={`${formatVn(data.cookTimeMinutes)} phút`} Icon={Clock} />
             <TheThongTin nhan="Khẩu phần" giaTri={`${formatVn(khauPhanHienTai)} người`} Icon={Users} />
             <TheThongTin
               nhan="Năng lượng"
-              giaTri={data.dinhDuong ? `${formatVn(data.dinhDuong.calo)} kcal` : '—'}
+              giaTri={data.nutrition ? `${formatVn(data.nutrition.calories)} kcal` : '—'}
               Icon={Flame}
             />
           </View>
 
-          {data.moTa ? <BodyText className="mt-3 text-neutral-600" soDongToiDa={3}>{data.moTa}</BodyText> : null}
+          {data.description ? <BodyText className="mt-3 text-neutral-600" soDongToiDa={3}>{data.description}</BodyText> : null}
 
           {laTacGia ? (
             <View className="mt-3 flex-row gap-2">
@@ -534,11 +535,11 @@ export default function ManHinhChiTietCongThuc() {
             </View>
           ) : null}
 
-          {(tuongTu.data?.noiDung.length ?? 0) > 0 ? (
+          {(tuongTu.data?.length ?? 0) > 0 ? (
             <View className="mt-6">
               <TitleText className="text-lg">Món tương tự</TitleText>
               <DanhSachCongThuc
-                duLieu={tuongTu.data?.noiDung ?? []}
+                duLieu={tuongTu.data ?? []}
                 dangTai={tuongTu.isLoading}
                 khiChon={(idMoi) => router.push(`/recipe/${idMoi}`)}
                 bienThe="compact"

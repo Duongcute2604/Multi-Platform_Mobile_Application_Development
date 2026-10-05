@@ -2,15 +2,14 @@ import { act } from 'react';
 import { useAuthStore } from '../authStore';
 
 jest.mock('../../lib/api/auth', () => ({
-  dangNhap: jest.fn(async () => ({ accessToken: 'a', refreshToken: 'r', thoiGianHetHan: 3600 })),
-  dangKy: jest.fn(async () => ({ accessToken: 'a', refreshToken: 'r', thoiGianHetHan: 3600 })),
+  dangNhap: jest.fn(async () => ({ accessToken: 'a', refreshToken: 'r', expiresIn: 900 })),
+  dangKy: jest.fn(async () => ({ accessToken: 'a', refreshToken: 'r', expiresIn: 900 })),
   layThongTinNguoiDung: jest.fn(async () => ({
     id: 'u-1',
     email: 'a@b.c',
-    tenHienThi: 'Bếp Nhà',
-    anhDaiDien: null,
-    vaiTro: 'USER',
-    trangThai: 'ACTIVE',
+    displayName: 'Bếp Nhà',
+    avatarUrl: null,
+    role: 'USER',
   })),
 }));
 
@@ -52,7 +51,7 @@ describe('authStore', () => {
     });
     const state = useAuthStore.getState();
     expect(state.daDangNhap).toBe(true);
-    expect(state.nguoiDung?.tenHienThi).toBe('Bếp Nhà');
+    expect(state.nguoiDung?.displayName).toBe('Bếp Nhà');
     expect(state.loi).toBeNull();
   });
 

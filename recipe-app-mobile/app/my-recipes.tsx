@@ -24,7 +24,8 @@ export default function ManHinhCongThucCuaToi() {
   });
   const guiDuyet = useGuiDuyet();
 
-  const cuaToi = data?.noiDung ?? [];
+  // `GET /recipes` trả `content` (kiểu phân trang Spring)
+  const cuaToi = data?.content ?? [];
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -56,9 +57,9 @@ export default function ManHinhCongThucCuaToi() {
               />
               <View className="mt-2 flex-row items-center justify-between">
                 <BodyText>
-                  Trạng thái: <CaptionText>{tenTrangThai(item.trangThai)}</CaptionText>
+                  Trạng thái: <CaptionText>{tenTrangThai(item.status)}</CaptionText>
                 </BodyText>
-                {item.trangThai === 'DRAFT' || item.trangThai === 'REJECTED' ? (
+                {item.status === 'DRAFT' || item.status === 'REJECTED' ? (
                   <NutBam
                     tieuDe={guiDuyet.isPending ? 'Đang gửi...' : 'Gửi duyệt'}
                     bienThe="vien"

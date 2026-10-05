@@ -80,9 +80,9 @@ export default function ManHinhHoSo() {
             <TrangLoi loi="Không tải được hồ sơ" khiThuLai={() => refetch()} />
           ) : (
             <View className="mt-4 flex-row items-center gap-4 rounded-3xl bg-white p-5 shadow-sm">
-              <Avatar nguon={data.anhDaiDien} ten={data.tenHienThi} kichThuoc={72} />
+              <Avatar nguon={data.avatarUrl ?? null} ten={data.displayName} kichThuoc={72} />
               <View className="flex-1">
-                <TitleText className="text-lg">{data.tenHienThi}</TitleText>
+                <TitleText className="text-lg">{data.displayName}</TitleText>
                 <CaptionText>Nhà phát triển công thức</CaptionText>
                 <CaptionText>{data.email}</CaptionText>
               </View>

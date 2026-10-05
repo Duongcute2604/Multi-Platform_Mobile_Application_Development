@@ -93,7 +93,12 @@ export function useGuiDuyet() {
 export function useChuyenDoiYeuThich(id: string, dangYeuThich: boolean) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => (dangYeuThich ? xoaYeuThich(id) : themYeuThich(id)),
+    // Trả `KetQuaYeuThich` (toggle của backend) nhưng thành công cũng vô nghĩa với UI,
+    // nên ép về void để không ràng buộc kiểu ở nơi gọi
+    mutationFn: async () => {
+      if (dangYeuThich) await xoaYeuThich(id);
+      else await themYeuThich(id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: khoaTruyVan.congThuc.chiTiet(id) });
       queryClient.invalidateQueries({ queryKey: ['cong-thuc', 'danh-sach'] });

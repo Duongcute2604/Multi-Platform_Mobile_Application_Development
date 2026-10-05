@@ -19,6 +19,7 @@ import { CommentsModule } from './modules/comments/comments.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { DanhMucModule } from './modules/danh-muc/danh-muc.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
+import { RatingsModule } from './modules/ratings/ratings.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { FavoritesModule } from './modules/favorites/favorites.module';
     DanhMucModule,
     NotificationsModule,
     FavoritesModule,
+    RatingsModule,
   ],
 })
 export class AppModule {}

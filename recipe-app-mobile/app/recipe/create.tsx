@@ -14,6 +14,7 @@ import { TrangDangTai } from '../../src/components/ui/TrangThai';
 import { BodyText, CaptionText, TitleText } from '../../src/components/ui/VanBan';
 import { taoCongThucSchema, type TaoCongThucForm } from '../../src/lib/validation/schemas';
 import { taiAnhLen } from '../../src/lib/api/uploads';
+import type { TaoCongThucPayload } from '../../src/lib/api/recipes';
 import { layUrlAnh } from '../../src/lib/utils/anh';
 import {
   useCapNhatCongThuc,
@@ -115,28 +116,45 @@ export default function ManHinhTaoCongThuc() {
 
   useEffect(() => {
     if (cheDoSua && chiTiet.data) {
+      // Backend trả field tiếng Anh; form dùng tiếng Việt nên dịch 2 chiều tại đây
       reset({
-        ten: chiTiet.data.ten,
-        moTa: chiTiet.data.moTa ?? '',
-        anhThumbnail: chiTiet.data.anhThumbnail ?? '',
-        thoiGianNauPhut: chiTiet.data.thoiGianNauPhut,
-        thoiGianChuanBiPhut: chiTiet.data.thoiGianChuanBiPhut ?? undefined,
-        khauPhan: chiTiet.data.khauPhan,
-        nguyenLieu: chiTiet.data.nguyenLieu.map((nl) => ({
-          ten: nl.ten,
-          dinhLuong: parseFloat(String(nl.dinhLuong)) || 0,
-          donVi: nl.donVi,
+        ten: chiTiet.data.title,
+        moTa: chiTiet.data.description ?? '',
+        anhThumbnail: chiTiet.data.thumbnailUrl ?? '',
+        thoiGianNauPhut: chiTiet.data.cookTimeMinutes,
+        thoiGianChuanBiPhut: chiTiet.data.prepTimeMinutes ?? undefined,
+        khauPhan: chiTiet.data.servings,
+        nguyenLieu: chiTiet.data.ingredients.map((nl) => ({
+          ten: nl.originalText,
+          dinhLuong: parseFloat(String(nl.quantity)) || 0,
+          donVi: nl.unit,
         })),
-        cacBuoc: chiTiet.data.cacBuoc.map((b) => ({ noiDung: b.noiDung })),
+        cacBuoc: chiTiet.data.steps.map((b) => ({ noiDung: b.content })),
       });
     }
   }, [cheDoSua, chiTiet.data, reset]);
 
   const guiDi = handleSubmit(async (duLieu) => {
+    // Form dùng tên tiếng Việt cho dễ đọc; `CreateRecipeDto` backend đòi
+    // tiếng Anh. Dịch tại đây để không rải tên Anh khắp form.
+    const payload: TaoCongThucPayload = {
+      title: duLieu.ten,
+      description: duLieu.moTa || undefined,
+      thumbnailUrl: duLieu.anhThumbnail || undefined,
+      cookTimeMinutes: duLieu.thoiGianNauPhut,
+      prepTimeMinutes: duLieu.thoiGianChuanBiPhut,
+      servings: duLieu.khauPhan,
+      ingredients: duLieu.nguyenLieu.map((nl) => ({
+        originalText: nl.ten,
+        quantity: nl.dinhLuong,
+        unit: nl.donVi,
+      })),
+      steps: duLieu.cacBuoc.map((b) => ({ content: b.noiDung })),
+    };
     if (cheDoSua) {
-      await capNhat.mutateAsync(duLieu);
+      await capNhat.mutateAsync(payload);
     } else {
-      await taoMoi.mutateAsync(duLieu);
+      await taoMoi.mutateAsync(payload);
     }
     router.back();
   });
