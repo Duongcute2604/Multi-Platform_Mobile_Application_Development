@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react-native';
 import { Chip } from '../../src/components/ui/Chip';
@@ -95,14 +95,9 @@ export default function ManHinhKiemTraTuongTac() {
 
         <View className="mt-3 flex-row flex-wrap gap-2">
           {MON_GOI_Y.map((mon) => (
-            <Pressable
-              key={mon}
-              accessibilityRole="button"
-              accessibilityLabel={`Thêm ${mon}`}
-              onPress={() => themMon(mon)}
-            >
-              <Chip nhan={mon} />
-            </Pressable>
+            // Chip tự là Pressable — bọc thêm Pressable ở ngoài sẽ thành
+            // nested Pressable và React Native cảnh báo mỗi lần render.
+            <Chip key={mon} nhan={mon} khiBam={() => themMon(mon)} />
           ))}
         </View>
 
