@@ -6,6 +6,78 @@ import { TaoBinhLuanDto } from './dto/comment.dto';
 export class CommentsService {
     constructor(private readonly prisma: PrismaService) {}
 
+    // ===== ADMIN METHODS =====
+    async layTatCaChoAdmin(trang: number, kichThuoc: number, status?: string) {
+        const where: any = {};
+        if (status === 'deleted') {
+            where.deletedAt = { not: null };
+        } else if (status === 'active') {
+            where.deletedAt = null;
+        }
+        // status undefined = all
+
+        const [items, tongSoPhanTu] = await Promise.all([
+            this.prisma.comment.findMany({
+                where,
+                skip: trang * kichThuoc,
+                take: kichThuoc,
+                orderBy: { createdAt: 'desc' },
+                include: { 
+                    user: { select: { id: true, email: true, displayName: true, avatarUrl: true, role: true, status: true } },
+                    recipe: { select: { id: true, title: true } },
+                    recipeReference: { select: { id: true, title: true } },
+                    parent: { select: { id: true, content: true } }
+                },
+            }),
+            this.prisma.comment.count({ where }),
+        ]);
+
+        const tongSoTrang = Math.ceil(tongSoPhanTu / kichThuoc);
+
+        return {
+            noiDung: items.map((c) => this.toAdminBinhLuan(c)),
+            tongSoPhanTu,
+            tongSoTrang,
+        };
+    }
+
+    async xoaChoAdmin(id: string) {
+        const comment = await this.prisma.comment.findFirst({
+            where: { id },
+            select: { id: true, deletedAt: true },
+        });
+        if (!comment) {
+            throw new NotFoundException({
+                code: 'CMT-04',
+                message: '[CMT-04] Không tìm thấy bình luận',
+            });
+        }
+        // Hard delete for admin
+        await this.prisma.comment.delete({ where: { id } });
+        return { thanhCong: true, message: 'Đã xóa bình luận' };
+    }
+
+    private toAdminBinhLuan(c: any) {
+        return {
+            id: c.id,
+            noiDung: c.content,
+            trangThai: c.deletedAt ? 'DELETED' : 'ACTIVE',
+            tacGia: c.user ? {
+                id: c.user.id,
+                email: c.user.email,
+                tenHienThi: c.user.displayName,
+                anhDaiDien: c.user.avatarUrl,
+                vaiTro: c.user.role,
+                trangThai: c.user.status,
+            } : null,
+            congThuc: c.recipe ? { id: c.recipe.id, ten: c.recipe.title } : null,
+            thamChieu: c.recipeReference ? { id: c.recipeReference.id, ten: c.recipeReference.title } : null,
+            phanHoiCua: c.parent ? { id: c.parent.id, noiDung: c.parent.content } : null,
+            thoiGianTao: c.createdAt.toISOString(),
+            daXoa: !!c.deletedAt,
+        };
+    }
+
     async layDanhSach(recipeId: string, trang: number, kichThuoc: number, nguoiXemId?: string) {
         // BR-UREC: Ẩn luôn bình luận của bài chưa duyệt với người ngoài
         await this.kiemTraDuocXem(recipeId, nguoiXemId);

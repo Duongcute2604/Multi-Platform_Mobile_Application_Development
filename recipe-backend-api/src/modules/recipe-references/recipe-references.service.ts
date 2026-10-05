@@ -116,4 +116,16 @@ export class RecipeReferencesService {
       data: { status: 'UNAVAILABLE' },
     });
   }
+
+  async sync(source: 'SPOONACULAR') {
+    // This is a placeholder for the actual sync logic
+    // In a real implementation, this would call Spoonacular API
+    // and create/update recipe references
+    return {
+        message: 'Sync initiated',
+        source,
+        timestamp: new Date().toISOString(),
+        status: 'initiated',
+    };
+  }
 }

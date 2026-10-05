@@ -13,6 +13,8 @@ import { AuditModule } from './modules/audit/audit.module';
 import { MealPlansModule } from './modules/meal-plans/meal-plans.module';
 import { ShoppingListsModule } from './modules/shopping-lists/shopping-lists.module';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
+import { CommentsModule } from './modules/comments/comments.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { RecommendationsModule } from './modules/recommendations/recommendations
     MealPlansModule,
     ShoppingListsModule,
     RecommendationsModule,
+    CommentsModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}
