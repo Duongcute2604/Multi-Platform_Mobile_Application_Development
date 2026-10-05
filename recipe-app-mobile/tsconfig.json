@@ -9,6 +9,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@cook/shared": [
+        "../packages/shared/src/index"
+      ],
+      "@cook/shared/*": [
+        "../packages/shared/src/*"
       ]
     }
   },
