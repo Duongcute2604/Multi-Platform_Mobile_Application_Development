@@ -1,6 +1,52 @@
 // Admin API functions
 import { apiClient } from './client';
 
+/**
+ * Backend tra 3 kieu phan trang KHAC NHAU cho cac danh sach quan tri:
+ * - `/categories`, `/tags`            -> mang thuan (khong phan trang)
+ * - `/meal-plans`, `/shopping-lists`  -> `{ noiDung, tongSoPhanTu, tongSoTrang }`
+ * - mot so cho nua                    -> `{ content, ... }`
+ *
+ * Trong khi doan code cua cac trang deu doc `{ content, tongSoPhanTu, tongSoTrang }`
+ * nen truoc day `data.content` bi `undefined` -> `.map` nem loi toan bo trang
+ * (man hinh trong trang). Chuan hoa TAI DAY de dung 1 cho thay vi sua 5 component.
+ */
+export interface TrangQuanTri<T> {
+  content: T[];
+  tongSoPhanTu: number;
+  tongSoTrang: number;
+}
+
+export function chuanHoaTrang<T>(duLieu: unknown): TrangQuanTri<T> {
+  if (Array.isArray(duLieu)) {
+    // Mang thuan: backend lay toan bo, khong phan trang -> dung 1 trang.
+    return { content: duLieu as T[], tongSoPhanTu: duLieu.length, tongSoTrang: 1 };
+  }
+  if (duLieu && typeof duLieu === 'object') {
+    const o = duLieu as Record<string, unknown>;
+    const content = Array.isArray(o.content)
+      ? (o.content as T[])
+      : Array.isArray(o.noiDung)
+        ? (o.noiDung as T[])
+        : [];
+    const tongSoPhanTu =
+      typeof o.tongSoPhanTu === 'number'
+        ? o.tongSoPhanTu
+        : typeof o.totalElements === 'number'
+          ? o.totalElements
+          : content.length;
+    const tongSoTrang =
+      typeof o.tongSoTrang === 'number'
+        ? o.tongSoTrang
+        : typeof o.totalPages === 'number'
+          ? o.totalPages
+          : 1;
+    return { content, tongSoPhanTu, tongSoTrang: Math.max(1, tongSoTrang) };
+  }
+  return { content: [], tongSoPhanTu: 0, tongSoTrang: 1 };
+}
+
+
 export interface DanhMuc {
   id: string;
   ten: string;
@@ -48,11 +94,7 @@ export async function layDanhSachDanhMuc(trang: number = 0, kichThuoc: number = 
   const res = await apiClient.get('/categories', {
     params: { page: trang, size: kichThuoc },
   });
-  return res.data as {
-    content: DanhMuc[];
-    tongSoPhanTu: number;
-    tongSoTrang: number;
-  };
+  return chuanHoaTrang<DanhMuc>(res.data);
 }
 
 export async function taoDanhMuc(dto: { ten: string; slug?: string; moTa?: string }) {
@@ -75,11 +117,7 @@ export async function layDanhSachNhan(trang: number = 0, kichThuoc: number = 20)
   const res = await apiClient.get('/tags', {
     params: { page: trang, size: kichThuoc },
   });
-  return res.data as {
-    content: { id: string; ten: string; slug: string }[];
-    tongSoPhanTu: number;
-    tongSoTrang: number;
-  };
+  return chuanHoaTrang<{ id: string; ten: string; slug: string }>(res.data);
 }
 
 export async function taoNhan(dto: { ten: string; slug?: string }) {
@@ -164,11 +202,8 @@ export async function layDanhSachKeHoachAn(trang: number = 0, kichThuoc: number 
   const res = await apiClient.get('/meal-plans', {
     params: { page: trang, size: kichThuoc },
   });
-  return res.data as {
-    content: any[];
-    tongSoPhanTu: number;
-    tongSoTrang: number;
-  };
+  // Backend tra `{ noiDung, tongSoPhanTu, tongSoTrang }` (ten tieng Viet)
+  return chuanHoaTrang<any>(res.data);
 }
 
 export async function layChiTietKeHoachAn(id: string) {
@@ -299,7 +334,8 @@ export async function layDanhSachDanhSachDiCho(trang: number = 0, kichThuoc: num
   const res = await apiClient.get('/shopping-lists', {
     params: { page: trang, size: kichThuoc },
   });
-  return res.data;
+  // Backend tra `{ noiDung, tongSoPhanTu, tongSoTrang }` (ten tieng Viet)
+  return chuanHoaTrang<DanhSachDiCho>(res.data);
 }
 
 export async function taoDanhSachDiCho(dto: { ten: string; loaiNguon: 'RECIPE' | 'MEAL_PLAN' | 'MANUAL'; nguonId?: string }) {
