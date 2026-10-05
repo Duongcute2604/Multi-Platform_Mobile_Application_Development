@@ -34,8 +34,30 @@ async function tryRefresh(): Promise<boolean> {
   }
 }
 
+/**
+ * Backend bọc mọi response trong `{ success, data, error }` (ResponseInterceptor).
+ * Ở đây ta bóc lớp vỏ đó lúc đọc để phần còn lại của web admin cứ `res.data`
+ * là ra payload thật — sửa 1 chỗ thay vì ~30 chỗ gọi API.
+ */
+interface Envelope<T> {
+  success: boolean;
+  data: T | null;
+  error: { code: string; message: string; details?: string } | null;
+}
+
+function bocEnvelope<T>(duLieu: unknown): T | null {
+  if (duLieu && typeof duLieu === 'object' && 'success' in duLieu && 'data' in duLieu && 'error' in duLieu) {
+    return (duLieu as Envelope<T>).data;
+  }
+  return (duLieu ?? null) as T | null;
+}
+
 apiClient.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const data = bocEnvelope(res.data);
+    if (data === null) return { ...res, data: null };
+    return { ...res, data };
+  },
   async (error) => {
     const original = error.config;
     // 401 và chưa thử refresh một lần
@@ -44,6 +66,11 @@ apiClient.interceptors.response.use(
       const ok = await tryRefresh();
       if (ok) return apiClient(original);
       useAuthStore.getState().clearAuth();
+    }
+    // Lỗi cũng bọc envelope: đưa `message` tiếng Việt lên đầu cho errorMessage.ts
+    const vo = error.response?.data as Envelope<unknown> | undefined;
+    if (vo && typeof vo === 'object' && 'error' in vo && vo.error) {
+      error.response.data = { ...vo, message: vo.error.message, code: vo.error.code };
     }
     return Promise.reject(error);
   }

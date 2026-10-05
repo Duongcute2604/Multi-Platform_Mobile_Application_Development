@@ -7,7 +7,12 @@
  */
 export function extractApiMessage(err: unknown, fallback: string): string {
   if (typeof err === 'object' && err !== null) {
-    const data = (err as { response?: { data?: { message?: unknown } } }).response?.data;
+    const data = (err as { response?: { data?: { message?: unknown; error?: { message?: unknown } } } })
+      .response?.data;
+    // Backend bọc lỗi trong envelope: ưu tiên `error.message` (mã lỗi tiếng Việt)
+    const trongEnvelope = data?.error?.message;
+    if (typeof trongEnvelope === 'string' && trongEnvelope.trim() !== '') return trongEnvelope;
+
     const msg = data?.message;
     if (typeof msg === 'string' && msg.trim() !== '') return msg;
     // class-validator tra mot danh sach loi khi DTO sai
