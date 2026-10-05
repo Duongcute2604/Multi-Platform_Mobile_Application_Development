@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { CalendarDays, House, Search, ShoppingCart, User } from 'lucide-react-native';
+import { CalendarDays, House, Search, ShieldCheck, ShoppingCart, User } from 'lucide-react-native';
 
 // Bottom bar Recipely: icon active teal #70B9BE (trích từ SVG gốc)
 export default function TabsLayout() {
@@ -18,6 +18,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="search"
         options={{ title: 'Tìm kiếm', tabBarIcon: ({ color, size }) => <Search color={color} size={size} /> }}
+      />
+      <Tabs.Screen
+        name="food-check"
+        options={{ title: 'Kiểm tra', tabBarIcon: ({ color, size }) => <ShieldCheck color={color} size={size} /> }}
       />
       <Tabs.Screen
         name="mealplan"
