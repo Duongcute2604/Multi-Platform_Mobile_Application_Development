@@ -18,6 +18,7 @@ import { RecommendationsModule } from './modules/recommendations/recommendations
 import { CommentsModule } from './modules/comments/comments.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { DanhMucModule } from './modules/danh-muc/danh-muc.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { DanhMucModule } from './modules/danh-muc/danh-muc.module';
     ReportsModule,
     DanhMucModule,
     NotificationsModule,
+    FavoritesModule,
   ],
 })
 export class AppModule {}

@@ -39,6 +39,24 @@ export class RecipesController {
     return this.service.findAll(query, user?.role);
   }
 
+  /**
+   * BR-UREC: Tìm công thức theo nguyên liệu có sẵn.
+   * Khai báo TRƯỚC `@Get(':id')` — NestJS khớp route theo thứ tự, đặt sau sẽ
+   * bị `:id` nuốt mất và luôn trả 404.
+   */
+  @Get('search/by-ingredients')
+  @ApiOperation({ summary: 'Tìm công thức theo danh sách nguyên liệu' })
+  timTheoNguyenLieu(
+    @Query('ingredients') ingredients?: string,
+    @Query('number') number?: string,
+  ) {
+    const soLuong = Number(number);
+    return this.service.timTheoNguyenLieu(
+      ingredients,
+      Number.isInteger(soLuong) && soLuong > 0 ? soLuong : 10,
+    );
+  }
+
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
   @UseInterceptors(ActivityInterceptor)

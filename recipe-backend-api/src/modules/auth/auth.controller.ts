@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 
 @ApiTags('Auth')
@@ -50,5 +51,16 @@ export class AuthController {
   @ApiOperation({ summary: 'Lấy thông tin user hiện tại' })
   me(@CurrentUser() user: { id: string }) {
     return this.authService.me(user.id);
+  }
+
+  /**
+   * BR-AUTH: Quên mật khẩu. Luôn trả 200 với cùng một thông điệp dù email có
+   * tồn tại hay không — trả lỗi khác nhau là lộ ra email nào đã đăng ký.
+   */
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Quên mật khẩu (luôn trả lời chung để chống dò email)' })
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
   }
 }

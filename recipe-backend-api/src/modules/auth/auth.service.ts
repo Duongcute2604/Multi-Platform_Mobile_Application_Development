@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
@@ -17,6 +17,8 @@ const BCRYPT_ROUNDS = 10;
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -95,6 +97,29 @@ export class AuthService {
       where: { id: userId },
       data: { passwordHash },
     });
+  }
+
+  /**
+   * BR-AUTH: Quên mật khẩu — LUÔN trả lời giống nhau dù email có tồn tại hay
+   * không, để kẻ xấu không dò được email nào đã đăng ký.
+   *
+   * Ở môi trường demo chưa nối dịch vụ mail nên chỉ ghi log; đã ghi rõ trong
+   * response để người dùng không tưởng là đã gửi mail thật.
+   */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+    if (user) {
+      this.logger.warn(
+        `[AUTH-15] Yêu cầu đặt lại mật khẩu cho userId=${user.id} — chưa nối dịch vụ mail, cần đặt lại mật khẩu thủ công`,
+      );
+    }
+    return {
+      message:
+        'Nếu email này đã đăng ký, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.',
+    };
   }
 
   async me(userId: string): Promise<AuthUserResponse> {

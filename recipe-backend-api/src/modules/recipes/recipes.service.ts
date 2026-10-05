@@ -114,6 +114,66 @@ export class RecipesService {
     return recipe;
   }
 
+  /**
+   * BR-UREC: Tìm công thức theo nguyên liệu có sẵn.
+   *
+   * `originalText` lưu dạng tự do ("500g thịt bò băm") nên phải lọc ở tầng
+   * ứng dụng thay vì đẩy xuống SQL — có thứ tự tiếng Việt lẫn tiếng Anh.
+   * Chỉ trả công thức APPROVED: không lộ bài nháp qua ô tìm kiếm.
+   */
+  async timTheoNguyenLieu(ingredients?: string, soLuong = 10) {
+    const danhSach = (ingredients ?? '')
+      .split(/[,;]/)
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (danhSach.length === 0) {
+      return { content: [], pageable: { pageNumber: 0, pageSize: soLuong }, totalElements: 0, totalPages: 0 };
+    }
+
+    const candidates = await this.prisma.recipe.findMany({
+      where: {
+        deletedAt: null,
+        status: RecipeStatus.APPROVED,
+        ingredients: { some: { originalText: { contains: '' } } },
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        thumbnailUrl: true,
+        cookTimeMinutes: true,
+        prepTimeMinutes: true,
+        servings: true,
+        status: true,
+        source: true,
+        createdAt: true,
+        updatedAt: true,
+        ingredients: { select: { originalText: true } },
+      },
+      take: 200,
+    });
+
+    const content = candidates
+      .map((recipe) => {
+        const texts = recipe.ingredients.map((i) => i.originalText.toLowerCase());
+        // Công thức càng chứa nhiều nguyên liệu người dùng nhập càng khớp
+        const soKhop = danhSach.filter((nguyenLieu) => texts.some((t) => t.includes(nguyenLieu))).length;
+        return { ...recipe, soKhop };
+      })
+      .filter((r) => r.soKhop > 0)
+      .sort((a, b) => b.soKhop - a.soKhop)
+      .slice(0, soLuong)
+      .map(({ ingredients: _bo, soKhop, ...rest }) => rest);
+
+    return {
+      content,
+      pageable: { pageNumber: 0, pageSize: soLuong },
+      totalElements: content.length,
+      totalPages: 1,
+    };
+  }
+
   async create(dto: CreateRecipeDto, userId: string) {
     return this.prisma.$transaction(async (tx) => {
       const recipe = await tx.recipe.create({
