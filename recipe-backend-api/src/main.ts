@@ -1,14 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ResponseInterceptor } from './common/response.interceptor';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { layGocUpload } from './modules/uploads/upload-dir';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.setGlobalPrefix('api/v1');
+
+  // BR-UPLOAD: serve ảnh tại /uploads/<ten>.jpg
+  // ĐẶT TRƯỚC setGlobalPrefix KHÔNG ảnh hưởng — static asset không đi qua router,
+  // nên đường dẫn là /uploads/... chứ KHÔNG phải /api/v1/uploads/...
+  // Đúng thứ mobile mong đợi: `layUrlAnh('/uploads/x.jpg')` nối origin -> origin + /uploads/x.jpg
+  app.useStaticAssets(layGocUpload(), { prefix: '/uploads' });
 
   app.useGlobalPipes(
     new ValidationPipe({
