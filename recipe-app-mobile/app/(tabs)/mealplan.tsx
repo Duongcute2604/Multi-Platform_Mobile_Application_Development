@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus } from 'lucide-react-native';
+import { Plus, ShieldCheck } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../src/stores/authStore';
 import { BottomSheet } from '../../src/components/ui/BottomSheet';
@@ -164,6 +164,25 @@ function ChiTietKeHoach({ keHoachId, khiDong }: { keHoachId: string; khiDong: ()
             <View className="mt-1">{s.giaTri}</View>
           </View>
         ))}
+      </View>
+      
+      {/* Nút Kiểm tra tương tác */}
+      <View className="mt-3">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Kiểm tra tương tác món ăn"
+          onPress={() => router.push('/food-check')}
+          className="w-full rounded-2xl bg-primary p-4 flex-row items-center justify-center gap-3 shadow-sm"
+        >
+          <View className="h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+            <ShieldCheck size={24} color="white" />
+          </View>
+          <View className="flex-1">
+            <BodyText dam className="text-white">Kiểm tra tương tác</BodyText>
+            <CaptionText className="text-white/80">Kiểm tra Kỵ/Độc giữa các món trong kế hoạch</CaptionText>
+          </View>
+          <Text className="text-white/50">→</Text>
+        </Pressable>
       </View>
 
       <CaptionText className="mt-3 font-semibold">Tick ngày đi chợ ({cacNgayDiCho.length}/{tatCaNgay.length})</CaptionText>

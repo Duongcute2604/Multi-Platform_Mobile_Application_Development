@@ -4,7 +4,7 @@ import type { FC } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { ChevronLeft, Clock, Flame, Heart, Hourglass, Minus, Plus, Share2, Users } from 'lucide-react-native';
+import { ChevronLeft, Clock, Flame, Heart, Hourglass, Minus, Plus, Share2, Users, ShieldCheck } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '../../src/components/ui/Avatar';
@@ -445,6 +445,14 @@ export default function ManHinhChiTietCongThuc() {
               className="h-9 w-9 items-center justify-center rounded-full bg-white/90"
             >
               <Heart size={18} color={dangYeuThich ? '#CA4844' : '#0A2533'} fill={dangYeuThich ? '#CA4844' : 'transparent'} />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Kiểm tra tương tác"
+              onPress={() => router.push('/food-check')}
+              className="h-9 w-9 items-center justify-center rounded-full bg-white/90"
+            >
+              <ShieldCheck size={18} color="#0A2533" />
             </Pressable>
           </View>
         </View>
