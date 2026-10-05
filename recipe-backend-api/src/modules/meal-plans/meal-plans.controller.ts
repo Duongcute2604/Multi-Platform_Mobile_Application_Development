@@ -1,114 +1,82 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { MealPlansService } from './meal-plans.service';
-import {
-  CreateMealPlanDto,
-  CreateMealPlanItemDto,
-  UpdateMealPlanDto,
-  UpdateMealPlanItemDto,
-} from './dto/meal-plan.dto';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { TrackActivity } from '../activity/track-activity.decorator';
-import { ActivityInterceptor } from '../activity/activity.interceptor';
-import { AuditLog } from '../audit/audit-log.decorator';
-import { AuditInterceptor } from '../audit/audit.interceptor';
+import { CapNhatKeHoachAnDto, CapNhatMonDto, MonMoiDto, TaoKeHoachAnDto } from './dto/meal-plan.dto';
+import { JwtAuthGuard } from '../../common/jwt-auth.guard';
 
-@ApiTags('Meal Plans')
-@ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'))
 @Controller('meal-plans')
 export class MealPlansController {
-  constructor(private readonly service: MealPlansService) {}
+    constructor(private readonly mealPlansService: MealPlansService) {}
 
-  @Get()
-  @ApiOperation({ summary: 'Danh sách kế hoạch bữa ăn của tôi' })
-  findAll(@CurrentUser() user: { id: string }) {
-    return this.service.findAll(user.id);
-  }
+    @UseGuards(JwtAuthGuard)
+    @Get()
+    layDanhSach(
+        @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
+        @Query('size', new DefaultValuePipe(20), ParseIntPipe) size: number,
+        @Req() req: { user: { id: string } },
+    ) {
+        // BR-API: Phân trang page/size 0-based, chặn số âm và size quá lớn
+        // BR-MEAL: Mỗi tài khoản chỉ thấy kế hoạch của mình
+        const finalTrang = Math.max(page, 0);
+        const safeSize = Math.min(Math.max(size, 1), 50);
+        return this.mealPlansService.layDanhSach(finalTrang, safeSize, req.user.id);
+    }
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Tạo kế hoạch bữa ăn (FR-MEAL-01)' })
-  create(@Body() dto: CreateMealPlanDto, @CurrentUser() user: { id: string }) {
-    return this.service.create(dto, user.id);
-  }
+    @UseGuards(JwtAuthGuard)
+    @Get(':id')
+    layChiTiet(@Param('id') id: string, @Req() req: { user: { id: string } }) {
+        return this.mealPlansService.layChiTiet(id, req.user.id);
+    }
 
-  @Get(':id')
-  @UseInterceptors(ActivityInterceptor)
-  @TrackActivity('VIEW', 'MEAL_PLAN')
-  @ApiOperation({ summary: 'Chi tiết kế hoạch bữa ăn kèm các món theo ngày' })
-  findOne(@Param('id') id: string, @CurrentUser() user: { id: string }) {
-    return this.service.findOne(id, user.id);
-  }
+    @UseGuards(JwtAuthGuard)
+    @Post()
+    taoMoi(@Body() dto: TaoKeHoachAnDto, @Req() req: { user: { id: string } }) {
+        return this.mealPlansService.taoMoi(req.user.id, dto);
+    }
 
-  @Patch(':id')
-  @UseInterceptors(AuditInterceptor)
-  @AuditLog('UPDATE', 'MEAL_PLAN')
-  @ApiOperation({ summary: 'Cập nhật tên / ngày / trạng thái kế hoạch' })
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateMealPlanDto,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.service.update(id, dto, user.id);
-  }
+    @UseGuards(JwtAuthGuard)
+    @Patch(':id')
+    capNhat(
+        @Param('id') id: string,
+        @Body() dto: CapNhatKeHoachAnDto,
+        @Req() req: { user: { id: string } },
+    ) {
+        return this.mealPlansService.capNhat(req.user.id, id, dto);
+    }
 
-  @Delete(':id')
-  @HttpCode(HttpStatus.OK)
-  @UseInterceptors(AuditInterceptor)
-  @AuditLog('DELETE', 'MEAL_PLAN')
-  @ApiOperation({ summary: 'Xóa kế hoạch bữa ăn (kèm toàn bộ món)' })
-  remove(@Param('id') id: string, @CurrentUser() user: { id: string }) {
-    return this.service.remove(id, user.id);
-  }
+    @UseGuards(JwtAuthGuard)
+    @Delete(':id')
+    xoa(@Param('id') id: string, @Req() req: { user: { id: string } }) {
+        return this.mealPlansService.xoa(req.user.id, id);
+    }
 
-  @Post(':id/items')
-  @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(ActivityInterceptor)
-  @TrackActivity('PLAN_ITEM', 'MEAL_PLAN')
-  @ApiOperation({ summary: 'Thêm món vào kế hoạch (chỉ recipe APPROVED / reference ACTIVE)' })
-  addItem(
-    @Param('id') id: string,
-    @Body() dto: CreateMealPlanItemDto,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.service.addItem(id, dto, user.id);
-  }
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/items')
+    themMon(
+        @Param('id') id: string,
+        @Body() dto: MonMoiDto,
+        @Req() req: { user: { id: string } },
+    ) {
+        return this.mealPlansService.themMon(req.user.id, id, dto);
+    }
 
-  @Patch(':id/items/:itemId')
-  @UseInterceptors(AuditInterceptor)
-  @AuditLog('UPDATE', 'MEAL_PLAN')
-  @ApiOperation({ summary: 'Đổi ngày / bữa / khẩu phần / thứ tự của món' })
-  updateItem(
-    @Param('id') id: string,
-    @Param('itemId') itemId: string,
-    @Body() dto: UpdateMealPlanItemDto,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.service.updateItem(id, itemId, dto, user.id);
-  }
+    @UseGuards(JwtAuthGuard)
+    @Patch(':id/items/:monId')
+    capNhatMon(
+        @Param('id') id: string,
+        @Param('monId') monId: string,
+        @Body() dto: CapNhatMonDto,
+        @Req() req: { user: { id: string } },
+    ) {
+        return this.mealPlansService.capNhatMon(req.user.id, id, monId, dto);
+    }
 
-  @Delete(':id/items/:itemId')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Xóa món khỏi kế hoạch' })
-  removeItem(
-    @Param('id') id: string,
-    @Param('itemId') itemId: string,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.service.removeItem(id, itemId, user.id);
-  }
+    @UseGuards(JwtAuthGuard)
+    @Delete(':id/items/:monId')
+    xoaMon(
+        @Param('id') id: string,
+        @Param('monId') monId: string,
+        @Req() req: { user: { id: string } },
+    ) {
+        return this.mealPlansService.xoaMon(req.user.id, id, monId);
+    }
 }

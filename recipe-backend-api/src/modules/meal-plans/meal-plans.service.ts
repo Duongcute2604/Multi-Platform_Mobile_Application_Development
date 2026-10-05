@@ -1,298 +1,340 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { MealType, Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
-import {
-  CreateMealPlanDto,
-  CreateMealPlanItemDto,
-  UpdateMealPlanDto,
-  UpdateMealPlanItemDto,
-} from './dto/meal-plan.dto';
-
-/** Thứ tự hiển thị các bữa trong ngày */
-const MEAL_ORDER: Record<MealType, number> = {
-  [MealType.BREAKFAST]: 0,
-  [MealType.LUNCH]: 1,
-  [MealType.DINNER]: 2,
-  [MealType.SNACK]: 3,
-};
+import { PrismaService } from '../../common/prisma.service';
+import { CapNhatKeHoachAnDto, CapNhatMonDto, MonMoiDto, TaoKeHoachAnDto } from './dto/meal-plan.dto';
 
 @Injectable()
 export class MealPlansService {
-  constructor(private prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService) {}
 
-  // ---------- MealPlan ----------
+    async layDanhSach(trang: number, kichThuoc: number, userId: string) {
+        // BR-MEAL: Mỗi tài khoản chỉ thấy kế hoạch của mình
+        const where = { userId };
+        const [items, tongSoPhanTu] = await Promise.all([
+            this.prisma.mealPlan.findMany({
+                where,
+                skip: trang * kichThuoc,
+                take: kichThuoc,
+                orderBy: { createdAt: 'desc' },
+                include: { items: true },
+            }),
+            this.prisma.mealPlan.count({ where }),
+        ]);
 
-  async create(dto: CreateMealPlanDto, userId: string) {
-    this.assertDateRange(dto.startDate, dto.endDate);
-    return this.prisma.mealPlan.create({
-      data: {
-        userId,
-        name: dto.name.trim(),
-        startDate: dto.startDate,
-        endDate: dto.endDate,
-        isActive: true,
-      },
-      include: { items: true },
-    });
-  }
+        const tongSoTrang = Math.ceil(tongSoPhanTu / kichThuoc);
 
-  async findAll(userId: string) {
-    const plans = await this.prisma.mealPlan.findMany({
-      where: { userId },
-      orderBy: [{ startDate: 'desc' }],
-      include: {
-        items: {
-          select: { id: true, date: true, mealType: true, servings: true, sortOrder: true },
-        },
-      },
-    });
-
-    return plans.map((plan) => ({
-      id: plan.id,
-      name: plan.name,
-      startDate: plan.startDate,
-      endDate: plan.endDate,
-      isActive: plan.isActive,
-      totalItems: plan.items.length,
-      // Tổng số món theo từng bữa -> web/mobile hiển thị nhanh
-      itemsByMeal: this.countByMeal(plan.items),
-      createdAt: plan.createdAt,
-    }));
-  }
-
-  async findOne(id: string, userId: string) {
-    const plan = await this.prisma.mealPlan.findFirst({
-      where: { id, userId },
-      include: {
-        items: {
-          include: {
-            recipe: { select: { id: true, title: true, thumbnailUrl: true, cookTimeMinutes: true } },
-            recipeReference: { select: { id: true, title: true, imageUrl: true, servings: true, status: true } },
-          },
-        },
-      },
-    });
-    if (!plan) {
-      throw new NotFoundException('[MEAL-01] Kế hoạch bữa ăn không tồn tại');
+        return {
+            noiDung: items.map((m) => this.toKeHoachAn(m)),
+            tongSoPhanTu,
+            tongSoTrang,
+        };
     }
 
-    const items = [...plan.items].sort(
-      (a, b) =>
-        a.date.getTime() - b.date.getTime() ||
-        MEAL_ORDER[a.mealType] - MEAL_ORDER[b.mealType] ||
-        a.sortOrder - b.sortOrder,
-    );
+    async taoMoi(userId: string, dto: TaoKeHoachAnDto) {
+        if (new Date(dto.ngayBatDau) > new Date(dto.ngayKetThuc)) {
+            throw new BadRequestException({
+                code: 'MEAL-00',
+                message: '[MEAL-00] Ngày bắt đầu phải trước ngày kết thúc',
+            });
+        }
 
-    return { ...plan, items };
-  }
+        // BR-MEAL-04: Món gửi kèm lúc tạo cũng phải duyệt + trong khoảng + không trùng buổi
+        if (dto.cacMon) {
+            await this.validateMonMoi(dto.cacMon, dto.ngayBatDau, dto.ngayKetThuc);
+        }
 
-  async update(id: string, dto: UpdateMealPlanDto, userId: string) {
-    const plan = await this.findOneOwned(id, userId);
+        const mealPlan = await this.prisma.mealPlan.create({
+            data: {
+                userId,
+                name: dto.ten,
+                startDate: new Date(dto.ngayBatDau),
+                endDate: new Date(dto.ngayKetThuc),
+                isActive: true,
+                // BR-MEAL: Nhận món ngay khi tạo để mobile đỡ tốn thêm request
+                items: dto.cacMon
+                    ? {
+                          create: dto.cacMon.map((mon, i) => ({
+                              recipeId: mon.congThucId,
+                              date: new Date(mon.ngay),
+                              mealType: mon.buoiAn as MealType,
+                              servings: mon.khauPhan,
+                              sortOrder: i,
+                          })),
+                      }
+                    : undefined,
+            },
+            include: { items: true },
+        });
 
-    const startDate = dto.startDate ?? plan.startDate;
-    const endDate = dto.endDate ?? plan.endDate;
-    this.assertDateRange(startDate, endDate);
-
-    // Các món đã thêm phải vẫn nằm trong khoảng ngày mới
-    const outOfRange = plan.items.filter(
-      (item) => item.date < startDate || item.date > endDate,
-    );
-    if (outOfRange.length > 0) {
-      throw new BadRequestException(
-        `[MEAL-02] ${outOfRange.length} món đã thêm nằm ngoài khoảng ngày mới, hãy xóa hoặc chuyển món trước`,
-      );
+        return this.layChiTiet(mealPlan.id);
     }
 
-    return this.prisma.mealPlan.update({
-      where: { id },
-      data: {
-        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
-        ...(dto.startDate !== undefined ? { startDate: dto.startDate } : {}),
-        ...(dto.endDate !== undefined ? { endDate: dto.endDate } : {}),
-        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
-      },
-      include: { items: true },
-    });
-  }
+    async layChiTiet(id: string, userId?: string) {
+        // BR-MEAL: Join công thức để mobile hiển thị tên + ảnh, không chỉ recipeId
+        const mealPlan = await this.prisma.mealPlan.findUnique({
+            where: { id },
+            include: { items: { include: { recipe: { include: { author: true } } }, orderBy: { sortOrder: 'asc' } } },
+        });
 
-  async remove(id: string, userId: string) {
-    await this.findOneOwned(id, userId);
-    await this.prisma.mealPlan.delete({ where: { id } });
-    return { message: '[MEAL-01] Đã xóa kế hoạch bữa ăn' };
-  }
+        if (!mealPlan) {
+            throw new NotFoundException({
+                code: 'MEAL-04',
+                message: '[MEAL-04] Không tìm thấy kế hoạch ăn',
+            });
+        }
 
-  // ---------- MealPlanItem ----------
+        // BR-MEAL: Kế hoạch của ai người đó xem (admin xem qua API admin riêng)
+        if (userId && mealPlan.userId !== userId) {
+            throw new NotFoundException({
+                code: 'MEAL-04',
+                message: '[MEAL-04] Không tìm thấy kế hoạch ăn',
+            });
+        }
 
-  async addItem(planId: string, dto: CreateMealPlanItemDto, userId: string) {
-    const plan = await this.findOneOwned(planId, userId);
-
-    // MEAL-02: ngày của món phải nằm trong khoảng của kế hoạch
-    if (dto.date < plan.startDate || dto.date > plan.endDate) {
-      throw new BadRequestException('[MEAL-02] Ngày của món không nằm trong khoảng thời gian của kế hoạch');
+        return this.toKeHoachAn(mealPlan);
     }
 
-    // MEAL-04: chỉ thêm công thức APPROVED hoặc reference ACTIVE
-    const { servings, recipeData } = await this.resolveRecipeSource(dto);
-
-    const sortOrder = dto.sortOrder ?? (await this.nextSortOrder(planId, dto.date, dto.mealType));
-
-    // MEAL-05: không trùng date + mealType + sortOrder
-    const duplicate = await this.prisma.mealPlanItem.findFirst({
-      where: { mealPlanId: planId, date: dto.date, mealType: dto.mealType, sortOrder },
-    });
-    if (duplicate) {
-      throw new ConflictException('[MEAL-05] Đã có món khác ở cùng ngày và cùng bữa, vui lòng đổi thứ tự');
+    async capNhat(userId: string, id: string, dto: CapNhatKeHoachAnDto) {
+        const plan = await this.layCuaNguoiDung(userId, id);
+        const ngayBatDau = dto.ngayBatDau ? new Date(dto.ngayBatDau) : plan.startDate;
+        const ngayKetThuc = dto.ngayKetThuc ? new Date(dto.ngayKetThuc) : plan.endDate;
+        if (ngayBatDau > ngayKetThuc) {
+            throw new BadRequestException({
+                code: 'MEAL-00',
+                message: '[MEAL-00] Ngày bắt đầu phải trước ngày kết thúc',
+            });
+        }
+        await this.prisma.mealPlan.update({
+            where: { id },
+            data: {
+                ...(dto.ten !== undefined ? { name: dto.ten } : {}),
+                ...(dto.ngayBatDau !== undefined ? { startDate: new Date(dto.ngayBatDau) } : {}),
+                ...(dto.ngayKetThuc !== undefined ? { endDate: new Date(dto.ngayKetThuc) } : {}),
+            },
+        });
+        return this.layChiTiet(id);
     }
 
-    return this.prisma.mealPlanItem.create({
-      data: { mealPlanId: planId, date: dto.date, mealType: dto.mealType, servings, sortOrder, ...recipeData },
-      include: this.itemInclude(),
-    });
-  }
-
-  async updateItem(planId: string, itemId: string, dto: UpdateMealPlanItemDto, userId: string) {
-    const plan = await this.findOneOwned(planId, userId);
-    const item = await this.prisma.mealPlanItem.findFirst({ where: { id: itemId, mealPlanId: planId } });
-    if (!item) {
-      throw new NotFoundException('[MEAL-01] Món trong kế hoạch không tồn tại');
+    async xoa(userId: string, id: string) {
+        await this.layCuaNguoiDung(userId, id);
+        // BR-MEAL: Xóa kế hoạch kéo theo món bên trong (cascade)
+        await this.prisma.mealPlan.delete({ where: { id } });
+        return { thanhCong: true };
     }
 
-    const date = dto.date ?? item.date;
-    const mealType = dto.mealType ?? item.mealType;
-    const sortOrder = dto.sortOrder ?? item.sortOrder;
-
-    if (date < plan.startDate || date > plan.endDate) {
-      throw new BadRequestException('[MEAL-02] Ngày của món không nằm trong khoảng thời gian của kế hoạch');
+    async themMon(userId: string, keHoachId: string, dto: MonMoiDto) {
+        // BR-MEAL-04: Chỉ món APPROVED, ngày trong khoảng kế hoạch, 1 buổi 1 món
+        const plan = await this.layCuaNguoiDung(userId, keHoachId);
+        if (dto.congThucId) {
+            const congThuc = await this.prisma.recipe.findFirst({
+                where: { id: dto.congThucId, deletedAt: null, status: 'APPROVED' },
+                select: { id: true },
+            });
+            if (!congThuc) {
+                throw new NotFoundException({ code: 'REC-04', message: '[REC-04] Chỉ thêm được món đã duyệt' });
+            }
+        }
+        if (dto.thamChieuId) {
+            const thamChieu = await this.prisma.recipeReference.findUnique({
+                where: { id: dto.thamChieuId },
+                select: { id: true },
+            });
+            if (!thamChieu) {
+                throw new NotFoundException({ code: 'REC-04', message: '[REC-04] Không tìm thấy món tham chiếu' });
+            }
+        }
+        const ngayAn = new Date(`${dto.ngay}T00:00:00`);
+        const batDau = new Date(plan.startDate);
+        batDau.setHours(0, 0, 0, 0);
+        const ketThuc = new Date(plan.endDate);
+        ketThuc.setHours(0, 0, 0, 0);
+        if (ngayAn < batDau || ngayAn > ketThuc) {
+            throw new BadRequestException({
+                code: 'MEAL-06',
+                message: '[MEAL-06] Ngày ăn phải trong khoảng kế hoạch',
+            });
+        }
+        const soThuTu = await this.prisma.mealPlanItem.count({ where: { mealPlanId: keHoachId } });
+        // BR-MEAL-04: 1 buổi chỉ 1 món (unique DB gồm sortOrder nên check tay)
+        const daCo = await this.prisma.mealPlanItem.findFirst({
+            where: { mealPlanId: keHoachId, date: ngayAn, mealType: dto.buoiAn as MealType },
+            select: { id: true },
+        });
+        if (daCo) {
+            throw new BadRequestException({
+                code: 'MEAL-07',
+                message: '[MEAL-07] Buổi này đã có món, sửa thay vì thêm mới',
+            });
+        }
+        try {
+            await this.prisma.mealPlanItem.create({
+                data: {
+                    mealPlanId: keHoachId,
+                    recipeId: dto.congThucId,
+                    recipeReferenceId: dto.thamChieuId,
+                    date: ngayAn,
+                    mealType: dto.buoiAn as MealType,
+                    servings: dto.khauPhan,
+                    sortOrder: soThuTu,
+                },
+            });
+        } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+                throw new BadRequestException({
+                    code: 'MEAL-07',
+                    message: '[MEAL-07] Buổi này đã có món, sửa thay vì thêm mới',
+                });
+            }
+            throw e;
+        }
+        return this.layChiTiet(keHoachId);
     }
 
-    const duplicate = await this.prisma.mealPlanItem.findFirst({
-      where: { id: { not: itemId }, mealPlanId: planId, date, mealType, sortOrder },
-    });
-    if (duplicate) {
-      throw new ConflictException('[MEAL-05] Đã có món khác ở cùng ngày và cùng bữa, vui lòng đổi thứ tự');
+    async capNhatMon(userId: string, keHoachId: string, monId: string, dto: CapNhatMonDto) {
+        const plan = await this.layCuaNguoiDung(userId, keHoachId);
+        const mon = await this.prisma.mealPlanItem.findFirst({
+            where: { id: monId, mealPlanId: keHoachId },
+            select: { id: true, date: true, mealType: true },
+        });
+        if (!mon) {
+            throw new NotFoundException({ code: 'MEAL-05', message: '[MEAL-05] Không tìm thấy món trong kế hoạch' });
+        }
+        const ngayMoi = dto.ngay !== undefined ? new Date(`${dto.ngay}T00:00:00`) : mon.date;
+        const buoiMoi = (dto.buoiAn ?? mon.mealType) as MealType;
+        // BR-MEAL: Chặn dời ngày ra ngoài khoảng kế hoạch (MEAL-06)
+        const batDau = new Date(plan.startDate);
+        batDau.setHours(0, 0, 0, 0);
+        const ketThuc = new Date(plan.endDate);
+        ketThuc.setHours(0, 0, 0, 0);
+        const ngayChuan = new Date(ngayMoi);
+        ngayChuan.setHours(0, 0, 0, 0);
+        if (ngayChuan < batDau || ngayChuan > ketThuc) {
+            throw new BadRequestException({
+                code: 'MEAL-06',
+                message: '[MEAL-06] Ngày ăn phải trong khoảng kế hoạch',
+            });
+        }
+        // BR-MEAL-04: Chặn đổi sang buổi đã có món (MEAL-07)
+        if (dto.ngay !== undefined || dto.buoiAn !== undefined) {
+            const trung = await this.prisma.mealPlanItem.findFirst({
+                where: { mealPlanId: keHoachId, date: ngayChuan, mealType: buoiMoi, NOT: { id: monId } },
+                select: { id: true },
+            });
+            if (trung) {
+                throw new BadRequestException({
+                    code: 'MEAL-07',
+                    message: '[MEAL-07] Buổi này đã có món, chọn buổi khác',
+                });
+            }
+        }
+        // BR-MEAL-04: Cho dời ngày/đổi buổi kèm khẩu phần
+        await this.prisma.mealPlanItem.update({
+            where: { id: monId },
+            data: {
+                ...(dto.khauPhan !== undefined ? { servings: dto.khauPhan } : {}),
+                ...(dto.ngay !== undefined ? { date: new Date(`${dto.ngay}T00:00:00`) } : {}),
+                ...(dto.buoiAn !== undefined ? { mealType: dto.buoiAn as MealType } : {}),
+            },
+        });
+        return this.layChiTiet(keHoachId);
     }
 
-    return this.prisma.mealPlanItem.update({
-      where: { id: itemId },
-      data: {
-        ...(dto.date !== undefined ? { date: dto.date } : {}),
-        ...(dto.mealType !== undefined ? { mealType: dto.mealType } : {}),
-        ...(dto.servings !== undefined ? { servings: dto.servings } : {}),
-        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
-      },
-      include: this.itemInclude(),
-    });
-  }
-
-  async removeItem(planId: string, itemId: string, userId: string) {
-    await this.findOneOwned(planId, userId);
-    const item = await this.prisma.mealPlanItem.findFirst({ where: { id: itemId, mealPlanId: planId } });
-    if (!item) {
-      throw new NotFoundException('[MEAL-01] Món trong kế hoạch không tồn tại');
-    }
-    await this.prisma.mealPlanItem.delete({ where: { id: itemId } });
-    return { message: '[MEAL-01] Đã xóa món khỏi kế hoạch' };
-  }
-
-  // ---------- Helper ----------
-
-  /** Chỉ chủ sở hữu mới được thấy/ghi (tránh lộ tồn tại của plan của người khác) */
-  private async findOneOwned(id: string, userId: string) {
-    const plan = await this.prisma.mealPlan.findFirst({
-      where: { id, userId },
-      include: { items: { select: { id: true, date: true, mealType: true, servings: true, sortOrder: true } } },
-    });
-    if (!plan) {
-      throw new NotFoundException('[MEAL-01] Kế hoạch bữa ăn không tồn tại');
-    }
-    return plan;
-  }
-
-  private assertDateRange(startDate: Date, endDate: Date) {
-    if (endDate.getTime() < startDate.getTime()) {
-      throw new BadRequestException('[MEAL-02] Ngày kết thúc phải sau hoặc bằng ngày bắt đầu');
-    }
-    const days = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
-    if (days > 366) {
-      throw new BadRequestException('[MEAL-02] Kế hoạch không được dài quá 366 ngày');
-    }
-  }
-
-  /** MEAL-04 + MEAL-06: xác thực nguồn công thức, trả về servings mặc định + data tạo item */
-  private async resolveRecipeSource(dto: Pick<CreateMealPlanItemDto, 'recipeId' | 'recipeReferenceId' | 'servings'>) {
-    if (dto.recipeId && dto.recipeReferenceId) {
-      throw new BadRequestException('[MEAL-06] Chỉ được chọn công thức nội bộ hoặc công thức tham khảo, không chọn cả hai');
-    }
-    if (!dto.recipeId && !dto.recipeReferenceId) {
-      throw new BadRequestException('[MEAL-06] Phải chọn công thức nội bộ hoặc công thức tham khảo');
+    async xoaMon(userId: string, keHoachId: string, monId: string) {
+        await this.layCuaNguoiDung(userId, keHoachId);
+        const xoa = await this.prisma.mealPlanItem.deleteMany({ where: { id: monId, mealPlanId: keHoachId } });
+        if (xoa.count === 0) {
+            throw new NotFoundException({ code: 'MEAL-05', message: '[MEAL-05] Không tìm thấy món trong kế hoạch' });
+        }
+        return this.layChiTiet(keHoachId);
     }
 
-    if (dto.servings !== undefined && dto.servings < 1) {
-      throw new BadRequestException('[MEAL-03] Khẩu phần phải lớn hơn 0');
+    private async validateMonMoi(
+        cacMon: Array<{ congThucId?: string; thamChieuId?: string; ngay: string; buoiAn: string }>,
+        ngayBatDau: string,
+        ngayKetThuc: string,
+    ) {
+        const batDau = new Date(`${ngayBatDau}T00:00:00`);
+        const ketThuc = new Date(`${ngayKetThuc}T00:00:00`);
+        const daThay = new Set<string>();
+        for (const mon of cacMon) {
+            if (mon.congThucId) {
+                const congThuc = await this.prisma.recipe.findFirst({
+                    where: { id: mon.congThucId, deletedAt: null, status: 'APPROVED' },
+                    select: { id: true },
+                });
+                if (!congThuc) {
+                    throw new NotFoundException({ code: 'REC-04', message: '[REC-04] Chỉ thêm được món đã duyệt' });
+                }
+            }
+            const ngayAn = new Date(`${mon.ngay}T00:00:00`);
+            if (ngayAn < batDau || ngayAn > ketThuc) {
+                throw new BadRequestException({
+                    code: 'MEAL-06',
+                    message: '[MEAL-06] Ngày ăn phải trong khoảng kế hoạch',
+                });
+            }
+            const khoa = `${mon.ngay}|${mon.buoiAn}`;
+            if (daThay.has(khoa)) {
+                throw new BadRequestException({
+                    code: 'MEAL-07',
+                    message: '[MEAL-07] Buổi này đã có món, sửa thay vì thêm mới',
+                });
+            }
+            daThay.add(khoa);
+        }
     }
 
-    if (dto.recipeId) {
-      const recipe = await this.prisma.recipe.findFirst({
-        where: { id: dto.recipeId, deletedAt: null },
-        select: { id: true, status: true, servings: true },
-      });
-      if (!recipe) {
-        throw new NotFoundException('[MEAL-04] Công thức không tồn tại');
-      }
-      if (recipe.status !== 'APPROVED') {
-        throw new ConflictException('[MEAL-04] Chỉ thêm được công thức đã duyệt (APPROVED) vào kế hoạch');
-      }
-      return { servings: dto.servings ?? recipe.servings, recipeData: { recipeId: recipe.id } };
+    private async layCuaNguoiDung(userId: string, id: string) {
+        // BR-MEAL: Mọi thao tác ghi phải đúng chủ sở hữu kế hoạch
+        const plan = await this.prisma.mealPlan.findFirst({
+            where: { id, userId },
+            select: { id: true, startDate: true, endDate: true },
+        });
+        if (!plan) {
+            throw new NotFoundException({
+                code: 'MEAL-04',
+                message: '[MEAL-04] Không tìm thấy kế hoạch ăn',
+            });
+        }
+        return plan;
     }
 
-    const reference = await this.prisma.recipeReference.findFirst({
-      where: { id: dto.recipeReferenceId },
-      select: { id: true, status: true, servings: true },
-    });
-    if (!reference) {
-      throw new NotFoundException('[MEAL-04] Công thức tham khảo không tồn tại');
+    private toKeHoachAn(mealPlan: {
+        id: string;
+        name: string;
+        startDate: Date;
+        endDate: Date;
+        isActive: boolean;
+        items: Array<{
+            id: string;
+            date: Date;
+            mealType: string;
+            servings: number;
+            sortOrder: number;
+            recipeId: string | null;
+            recipe?: {
+                id: string;
+                title: string;
+                thumbnailUrl: string | null;
+            } | null;
+        }>;
+    }) {
+        return {
+            id: mealPlan.id,
+            ten: mealPlan.name,
+            ngayBatDau: mealPlan.startDate.toISOString().split('T')[0],
+            ngayKetThuc: mealPlan.endDate.toISOString().split('T')[0],
+            kichHoat: mealPlan.isActive,
+            cacMon: mealPlan.items.map((item) => ({
+                id: item.id,
+                ngay: item.date.toISOString().split('T')[0],
+                loaiBuoiAn: item.mealType,
+                khauPhan: item.servings,
+                thuTu: item.sortOrder,
+                congThuc: item.recipe
+                    ? { id: item.recipe.id, ten: item.recipe.title, anhThumbnail: item.recipe.thumbnailUrl }
+                    : null,
+            })),
+        };
     }
-    if (reference.status !== 'ACTIVE') {
-      throw new ConflictException('[MEAL-04] Chỉ thêm được công thức tham khảo đang ACTIVE vào kế hoạch');
-    }
-    return {
-      servings: dto.servings ?? Math.max(1, reference.servings || 1),
-      recipeData: { recipeReferenceId: reference.id },
-    };
-  }
-
-  private async nextSortOrder(mealPlanId: string, date: Date, mealType: MealType) {
-    const last = await this.prisma.mealPlanItem.findFirst({
-      where: { mealPlanId, date, mealType },
-      orderBy: { sortOrder: 'desc' },
-      select: { sortOrder: true },
-    });
-    return (last?.sortOrder ?? -1) + 1;
-  }
-
-  private countByMeal(items: Array<{ mealType: MealType }>) {
-    const result: Record<MealType, number> = {
-      BREAKFAST: 0,
-      LUNCH: 0,
-      DINNER: 0,
-      SNACK: 0,
-    };
-    for (const item of items) {
-      result[item.mealType] += 1;
-    }
-    return result;
-  }
-
-  private itemInclude(): Prisma.MealPlanItemInclude {
-    return {
-      recipe: { select: { id: true, title: true, thumbnailUrl: true, cookTimeMinutes: true } },
-      recipeReference: { select: { id: true, title: true, imageUrl: true, status: true } },
-    };
-  }
 }

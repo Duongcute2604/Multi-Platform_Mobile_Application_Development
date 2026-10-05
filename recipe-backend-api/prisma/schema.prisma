@@ -305,6 +305,7 @@ model Rating {
   recipeReferenceId   String?
   recipeReference     RecipeReference? @relation(fields: [recipeReferenceId], references: [id], onDelete: Cascade)
   score               Int     // 1-5
+  binhLuan            String? @db.Text // bình luận đi kèm đánh giá
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   

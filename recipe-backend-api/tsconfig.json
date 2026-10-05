@@ -19,7 +19,11 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["src/*"],
-      "@shared/*": ["../packages/shared/src/*"]
+      "@shared/*": ["../packages/shared/src/*"],
+      "@cookbook/shared/*": ["../packages/shared/src/*"],
+      "@cookbook/shared": ["../packages/shared/src/index"],
+      "@cook/shared/*": ["../packages/shared/src/*"],
+      "@cook/shared": ["../packages/shared/src/index"]
     }
   }
 }

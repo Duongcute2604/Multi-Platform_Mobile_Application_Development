@@ -1,410 +1,330 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, ShoppingListStatus } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
-import {
-  AggregationService,
-  type AggregatedIngredientLine,
-  type ScaledIngredientLine,
-} from './services/aggregation.service';
-import {
-  CreateShoppingListDto,
-  CreateShoppingListItemDto,
-  GenerateFromRecipeDto,
-  ShoppingListQueryDto,
-  UpdateShoppingListDto,
-  UpdateShoppingListItemDto,
-} from './dto/shopping-list.dto';
-
-const MAX_NAME_LENGTH = 200;
+import { aggregateQuantities, generateShoppingItems, scaleQuantity, type ScaledItem } from '@cook/shared';
+import { PrismaService } from '../../common/prisma.service';
+import { MonMoiDto, SuaMonDiChoDto, CapNhatDanhSachDto, TaoDanhSachDiChoDto } from './dto/shopping-list.dto';
 
 @Injectable()
 export class ShoppingListsService {
-  constructor(
-    private prisma: PrismaService,
-    private aggregation: AggregationService,
-  ) {}
+    constructor(private readonly prisma: PrismaService) {}
 
-  // ---------- Danh sách ----------
+    async layDanhSachCuaNguoiDung(userId: string, trang: number, kichThuoc: number) {
+        // BR-SHOP: Mỗi tài khoản chỉ thấy danh sách của mình, ẩn mục đã archive
+        const where = { userId, status: { not: ShoppingListStatus.ARCHIVED } };
+        const [items, tongSoPhanTu] = await Promise.all([
+            this.prisma.shoppingList.findMany({
+                where,
+                skip: trang * kichThuoc,
+                take: kichThuoc,
+                orderBy: { createdAt: 'desc' },
+                include: { items: { orderBy: { sortOrder: 'asc' } } },
+            }),
+            this.prisma.shoppingList.count({ where }),
+        ]);
 
-  async createManual(dto: CreateShoppingListDto, userId: string) {
-    if (dto.recipeId || dto.recipeReferenceId) {
-      // Có nguồn -> đi qua luồng generate để áp BR-03/BR-04
-      return this.generateFromRecipe(dto, userId);
+        const tongSoTrang = Math.ceil(tongSoPhanTu / kichThuoc);
+
+        return {
+            noiDung: items.map((s) => this.toDanhSach(s)),
+            tongSoPhanTu,
+            tongSoTrang,
+        };
     }
-    return this.prisma.shoppingList.create({
-      data: {
-        userId,
-        name: dto.name.trim(),
-        sourceType: 'MANUAL',
-        sourceId: null,
-        status: ShoppingListStatus.ACTIVE,
-        items: { create: [] },
-      },
-      include: { items: { orderBy: { sortOrder: 'asc' } } },
-    });
-  }
 
-  async findAll(query: ShoppingListQueryDto, userId: string) {
-    const lists = await this.prisma.shoppingList.findMany({
-      where: { userId, ...(query.status ? { status: query.status } : {}) },
-      orderBy: { createdAt: 'desc' },
-      include: { items: { select: { isChecked: true } } },
-    });
-
-    return lists.map((list) => {
-      const totalItems = list.items.length;
-      const checkedItems = list.items.filter((i) => i.isChecked).length;
-      return {
-        id: list.id,
-        name: list.name,
-        sourceType: list.sourceType,
-        sourceId: list.sourceId,
-        status: list.status,
-        totalItems,
-        checkedItems,
-        progress: totalItems === 0 ? 0 : Math.round((checkedItems / totalItems) * 100),
-        createdAt: list.createdAt,
-        updatedAt: list.updatedAt,
-      };
-    });
-  }
-
-  async findOne(id: string, userId: string) {
-    const list = await this.prisma.shoppingList.findFirst({
-      where: { id, userId },
-      include: {
-        items: {
-          orderBy: { sortOrder: 'asc' },
-          include: {
-            internalIngredient: {
-              select: { id: true, canonicalName: true, unitCategory: true, defaultUnit: true },
+    async taoMoi(userId: string, dto: TaoDanhSachDiChoDto) {
+        // BR-SHOP: Cho tạo kèm món để mobile đỡ tốn thêm request
+        const list = await this.prisma.shoppingList.create({
+            data: {
+                userId,
+                name: dto.ten,
+                sourceType: dto.loaiNguon,
+                sourceId: dto.nguonId,
+                items: dto.cacMon
+                    ? {
+                          create: dto.cacMon.map((mon, i) => ({
+                              internalIngredientId: mon.nguyenLieuId,
+                              originalText: mon.tenGoc,
+                              quantity: mon.dinhLuong,
+                              unit: mon.donVi,
+                              sortOrder: i,
+                          })),
+                      }
+                    : undefined,
             },
-          },
-        },
-      },
-    });
-    if (!list) {
-      throw new NotFoundException('[SHOP-01] Danh sách mua sắm không tồn tại');
-    }
-
-    const checkedItems = list.items.filter((i) => i.isChecked).length;
-    return {
-      ...list,
-      items: list.items.map((item) => ({
-        ...item,
-        // Decimal -> string để client tự format theo locale (không mất precision)
-        quantity: item.quantity.toString(),
-      })),
-      totalItems: list.items.length,
-      checkedItems,
-      progress: list.items.length === 0 ? 0 : Math.round((checkedItems / list.items.length) * 100),
-    };
-  }
-
-  async update(id: string, dto: UpdateShoppingListDto, userId: string) {
-    await this.findOneOwned(id, userId);
-    return this.prisma.shoppingList.update({
-      where: { id },
-      data: {
-        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
-        ...(dto.status !== undefined ? { status: dto.status } : {}),
-      },
-      include: { items: { orderBy: { sortOrder: 'asc' } } },
-    });
-  }
-
-  /** Xóa = lưu trữ (ARCHIVED) để không mất lịch sử mua sắm */
-  async remove(id: string, userId: string) {
-    await this.findOneOwned(id, userId);
-    await this.prisma.shoppingList.update({
-      where: { id },
-      data: { status: ShoppingListStatus.ARCHIVED },
-    });
-    return { message: '[SHOP-01] Đã lưu trữ danh sách mua sắm' };
-  }
-
-  // ---------- Generate ----------
-
-  /** BR-03 + BR-04: tạo danh sách từ 1 công thức nội bộ hoặc công thức tham khảo */
-  async generateFromRecipe(dto: GenerateFromRecipeDto, userId: string) {
-    if (dto.recipeId && dto.recipeReferenceId) {
-      throw new BadRequestException('[SHOP-02] Chỉ được chọn công thức nội bộ hoặc công thức tham khảo, không chọn cả hai');
-    }
-    if (!dto.recipeId && !dto.recipeReferenceId) {
-      throw new BadRequestException('[SHOP-02] Phải chọn công thức nội bộ hoặc công thức tham khảo');
-    }
-
-    const { title, baseServings, ingredients, sourceId } = dto.recipeId
-      ? await this.loadRecipe(dto.recipeId)
-      : await this.loadRecipeReference(dto.recipeReferenceId!);
-
-    if (ingredients.length === 0) {
-      throw new BadRequestException('[SHOP-02] Công thức chưa có nguyên liệu nào để tạo danh sách mua sắm');
-    }
-
-    const targetServings = dto.servings ?? baseServings;
-    if (targetServings < 1) {
-      throw new BadRequestException('[SHOP-02] Khẩu phần phải lớn hơn 0');
-    }
-
-    const { lines, warnings } = this.aggregateRecipeIngredients(ingredients, baseServings, targetServings, title);
-    const created = await this.createList(userId, {
-      name: dto.name?.trim() || `Mua sắm: ${title}`,
-      sourceType: 'RECIPE',
-      sourceId,
-      lines,
-    });
-
-    return { ...created, warnings };
-  }
-
-  /** BR-03 + BR-04: gộp toàn bộ món trong kế hoạch (dùng khẩu phần override của từng món) */
-  async generateFromMealPlan(mealPlanId: string, name: string | undefined, userId: string) {
-    const plan = await this.prisma.mealPlan.findFirst({
-      where: { id: mealPlanId, userId },
-      include: {
-        items: {
-          include: {
-            recipe: { include: { ingredients: true } },
-          },
-        },
-      },
-    });
-    if (!plan) {
-      throw new NotFoundException('[SHOP-01] Kế hoạch bữa ăn không tồn tại');
-    }
-    if (plan.items.length === 0) {
-      throw new BadRequestException('[SHOP-02] Kế hoạch chưa có món nào để tạo danh sách mua sắm');
-    }
-
-    const scaled: Array<{ line: ScaledIngredientLine; warnings: string[] }> = [];
-    const warnings: string[] = [];
-    const skipped: string[] = [];
-
-    for (const item of plan.items) {
-      if (!item.recipe) {
-        // Món từ công thức tham khảo chưa có bảng nguyên liệu nội bộ -> bỏ qua có ghi nhận
-        skipped.push(
-          item.recipeReferenceId
-            ? `[SHOP-02] Bỏ qua món dùng công thức tham khảo (chưa có dữ liệu nguyên liệu)`
-            : `[SHOP-02] Bỏ qua món không còn công thức`,
-        );
-        continue;
-      }
-      if (item.recipe.ingredients.length === 0) {
-        skipped.push(`[SHOP-02] Bỏ qua món "${item.recipe.title}" vì chưa có nguyên liệu`);
-        continue;
-      }
-      for (const ing of item.recipe.ingredients) {
-        const result = this.aggregation.scaleQuantity(
-          Number(ing.quantity),
-          item.recipe.servings,
-          item.servings,
-          `Món "${item.recipe.title}" ngày ${item.date.toISOString().slice(0, 10)}`,
-        );
-        warnings.push(...result.warnings);
-        scaled.push({
-          line: {
-            internalIngredientId: ing.internalIngredientId ?? undefined,
-            originalText: ing.originalText,
-            quantity: result.quantity,
-            unit: ing.unit,
-          },
-          warnings: result.warnings,
+            include: { items: true },
         });
-      }
+
+        return this.toDanhSach(list);
     }
 
-    if (scaled.length === 0) {
-      throw new BadRequestException('[SHOP-02] Kế hoạch không có món nào chứa nguyên liệu để tạo danh sách mua sắm');
+    async layChiTiet(id: string, userId: string) {
+        const list = await this.prisma.shoppingList.findFirst({
+            where: { id, userId },
+            include: { items: { orderBy: { sortOrder: 'asc' } } },
+        });
+
+        if (!list) {
+            throw new NotFoundException({
+                code: 'SHOP-04',
+                message: '[SHOP-04] Không tìm thấy danh sách đi chợ',
+            });
+        }
+
+        return this.toDanhSach(list);
     }
 
-    const aggregated = this.aggregation.aggregate(scaled.map((s) => s.line));
-    warnings.push(...aggregated.warnings, ...skipped);
-
-    const created = await this.createList(userId, {
-      name: name?.trim() || `Mua sắm: ${plan.name}`,
-      sourceType: 'MEAL_PLAN',
-      sourceId: plan.id,
-      lines: aggregated.lines,
-    });
-
-    return { ...created, warnings };
-  }
-
-  // ---------- Item thủ công ----------
-
-  async addItem(listId: string, dto: CreateShoppingListItemDto, userId: string) {
-    const list = await this.findOneOwned(listId, userId);
-
-    if (dto.internalIngredientId) {
-      const ing = await this.prisma.internalIngredient.findUnique({
-        where: { id: dto.internalIngredientId },
-        select: { id: true },
-      });
-      if (!ing) {
-        throw new NotFoundException('[SHOP-02] Nguyên liệu nội bộ không tồn tại');
-      }
+    async xoa(id: string, userId: string) {
+        // BR-SHOP: Xóa mềm (ARCHIVED) để giữ lịch sử đi chợ
+        await this.layCuaNguoiDung(id, userId);
+        await this.prisma.shoppingList.update({
+            where: { id },
+            data: { status: 'ARCHIVED' },
+        });
+        return { thanhCong: true };
     }
 
-    const sortOrder = dto.sortOrder ?? (await this.nextSortOrder(listId));
-    return this.prisma.shoppingListItem.create({
-      data: {
-        shoppingListId: list.id,
-        internalIngredientId: dto.internalIngredientId ?? null,
-        originalText: dto.originalText.trim(),
-        quantity: new Prisma.Decimal(dto.quantity ?? 0),
-        unit: (dto.unit ?? 'g').trim(),
-        sortOrder,
-      },
-    });
-  }
-
-  async updateItem(listId: string, itemId: string, dto: UpdateShoppingListItemDto, userId: string) {
-    await this.findOneOwned(listId, userId);
-    const item = await this.prisma.shoppingListItem.findFirst({
-      where: { id: itemId, shoppingListId: listId },
-    });
-    if (!item) {
-      throw new NotFoundException('[SHOP-01] Món trong danh sách không tồn tại');
+    async capNhat(id: string, userId: string, dto: CapNhatDanhSachDto) {
+        // BR-SHOP: Đổi tên / chuyển trạng thái (mobile nút Hoàn thành)
+        await this.layCuaNguoiDung(id, userId);
+        await this.prisma.shoppingList.update({
+            where: { id },
+            data: {
+                ...(dto.ten !== undefined ? { name: dto.ten } : {}),
+                ...(dto.trangThai !== undefined ? { status: dto.trangThai } : {}),
+            },
+        });
+        return this.layChiTiet(id, userId);
     }
 
-    return this.prisma.shoppingListItem.update({
-      where: { id: itemId },
-      data: {
-        ...(dto.isChecked !== undefined ? { isChecked: dto.isChecked } : {}),
-        ...(dto.quantity !== undefined ? { quantity: new Prisma.Decimal(dto.quantity) } : {}),
-        ...(dto.unit !== undefined ? { unit: dto.unit.trim() } : {}),
-        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
-      },
-    });
-  }
-
-  async removeItem(listId: string, itemId: string, userId: string) {
-    await this.findOneOwned(listId, userId);
-    const item = await this.prisma.shoppingListItem.findFirst({
-      where: { id: itemId, shoppingListId: listId },
-    });
-    if (!item) {
-      throw new NotFoundException('[SHOP-01] Món trong danh sách không tồn tại');
+    // BR-SHOP: Đánh dấu đã mua/bỏ chọn — chỉ chủ sở hữu được đổi
+    async capNhatTrangThaiMon(listId: string, itemId: string, userId: string, daChon: boolean) {
+        return this.suaMon(listId, itemId, userId, { daChon });
     }
-    await this.prisma.shoppingListItem.delete({ where: { id: itemId } });
-    return { message: '[SHOP-01] Đã xóa món khỏi danh sách' };
-  }
 
-  // ---------- Helper ----------
-
-  private async findOneOwned(id: string, userId: string) {
-    const list = await this.prisma.shoppingList.findFirst({ where: { id, userId } });
-    if (!list) {
-      throw new NotFoundException('[SHOP-01] Danh sách mua sắm không tồn tại');
+    async themMon(listId: string, userId: string, dto: MonMoiDto) {
+        await this.layCuaNguoiDung(listId, userId);
+        const soThuTu = await this.prisma.shoppingListItem.count({ where: { shoppingListId: listId } });
+        await this.prisma.shoppingListItem.create({
+            data: {
+                shoppingListId: listId,
+                internalIngredientId: dto.nguyenLieuId,
+                originalText: dto.tenGoc,
+                quantity: dto.dinhLuong,
+                unit: dto.donVi,
+                sortOrder: soThuTu,
+            },
+        });
+        return this.layChiTiet(listId, userId);
     }
-    return list;
-  }
 
-  private async loadRecipe(recipeId: string) {
-    const recipe = await this.prisma.recipe.findFirst({
-      where: { id: recipeId, deletedAt: null },
-      include: { ingredients: true },
-    });
-    if (!recipe) {
-      throw new NotFoundException('[SHOP-02] Công thức không tồn tại');
+    async suaMon(listId: string, itemId: string, userId: string, dto: SuaMonDiChoDto) {
+        await this.layCuaNguoiDung(listId, userId);
+        const item = await this.prisma.shoppingListItem.updateMany({
+            where: { id: itemId, shoppingListId: listId },
+            data: {
+                ...(dto.tenGoc !== undefined ? { originalText: dto.tenGoc } : {}),
+                ...(dto.dinhLuong !== undefined ? { quantity: dto.dinhLuong } : {}),
+                ...(dto.donVi !== undefined ? { unit: dto.donVi } : {}),
+                ...(dto.daChon !== undefined ? { isChecked: dto.daChon } : {}),
+            },
+        });
+        if (item.count === 0) {
+            throw new NotFoundException({
+                code: 'SHOP-05',
+                message: '[SHOP-05] Không tìm thấy món trong danh sách',
+            });
+        }
+        return this.layChiTiet(listId, userId);
     }
-    if (recipe.status !== 'APPROVED') {
-      throw new ConflictException('[SHOP-02] Chỉ tạo danh sách mua sắm từ công thức đã duyệt (APPROVED)');
+
+    async xoaMon(listId: string, itemId: string, userId: string) {
+        await this.layCuaNguoiDung(listId, userId);
+        const xoa = await this.prisma.shoppingListItem.deleteMany({
+            where: { id: itemId, shoppingListId: listId },
+        });
+        if (xoa.count === 0) {
+            throw new NotFoundException({
+                code: 'SHOP-05',
+                message: '[SHOP-05] Không tìm thấy món trong danh sách',
+            });
+        }
+        return this.layChiTiet(listId, userId);
     }
-    return {
-      title: recipe.title,
-      baseServings: recipe.servings,
-      sourceId: recipe.id,
-      ingredients: recipe.ingredients,
-    };
-  }
 
-  /**
-   * Công thức tham khảo (Spoonacular) chưa có bảng nguyên liệu nội bộ trong hệ thống,
-   * nên không thể sinh danh sách mua sắm -> trả lỗi rõ ràng thay vì tạo list rỗng.
-   */
-  private async loadRecipeReference(referenceId: string): Promise<never> {
-    const reference = await this.prisma.recipeReference.findFirst({
-      where: { id: referenceId },
-    });
-    if (!reference) {
-      throw new NotFoundException('[SHOP-02] Công thức tham khảo không tồn tại');
+    private async layCuaNguoiDung(listId: string, userId: string) {
+        const list = await this.prisma.shoppingList.findFirst({
+            where: { id: listId, userId },
+            select: { id: true },
+        });
+        if (!list) {
+            throw new NotFoundException({
+                code: 'SHOP-04',
+                message: '[SHOP-04] Không tìm thấy danh sách đi chợ',
+            });
+        }
+        return list;
     }
-    throw new BadRequestException(
-      '[SHOP-02] Công thức tham khảo chưa có dữ liệu nguyên liệu trong hệ thống, hãy dùng công thức nội bộ đã duyệt',
-    );
-  }
 
-  private aggregateRecipeIngredients(
-    ingredients: Array<{ internalIngredientId: string | null; originalText: string; quantity: unknown; unit: string }>,
-    baseServings: number,
-    targetServings: number,
-    title: string,
-  ) {
-    const scaled = ingredients.map((ing) => {
-      const result = this.aggregation.scaleQuantity(
-        Number(ing.quantity),
-        baseServings,
-        targetServings,
-        `Công thức "${title}"`,
-      );
-      return {
-        line: {
-          internalIngredientId: ing.internalIngredientId ?? undefined,
-          originalText: ing.originalText,
-          quantity: result.quantity,
-          unit: ing.unit,
-        },
-        warnings: result.warnings,
-      };
-    });
+    // BR-SHOP + BR-03/BR-04: Sinh món từ kế hoạch — scale từng món rồi gộp qua @cook/shared.
+    // 500g + 1kg cùng nguyên liệu gộp thành 1500g thay vì 2 dòng.
+    async taoTuKeHoachAn(userId: string, mealPlanId: string, tuNgay?: string, denNgay?: string, cacNgay?: string[]) {
+        const plan = await this.prisma.mealPlan.findFirst({
+            where: { id: mealPlanId, userId },
+            include: {
+                items: {
+                    orderBy: { sortOrder: 'asc' },
+                    include: { recipe: { include: { ingredients: { orderBy: { sortOrder: 'asc' } } } } },
+                },
+            },
+        });
+        if (!plan) {
+            throw new NotFoundException({
+                code: 'MEAL-04',
+                message: '[MEAL-04] Không tìm thấy kế hoạch ăn',
+            });
+        }
 
-    const aggregated = this.aggregation.aggregate(scaled.map((s) => s.line));
-    return {
-      lines: aggregated.lines,
-      warnings: [...scaled.flatMap((s) => s.warnings), ...aggregated.warnings],
-    };
-  }
+        const daScale: ScaledItem[] = [];
+        // BR-SHOP: Tick từng ngày thì lọc đúng các ngày đó, else lọc theo khoảng
+        const ngayChon = new Set((cacNgay ?? []).map((n) => n.slice(0, 10)));
+        const tu = tuNgay ? new Date(`${tuNgay}T00:00:00`) : null;
+        const den = denNgay ? new Date(`${denNgay}T00:00:00`) : null;
+        if (tu && den && tu > den) {
+            throw new BadRequestException({ code: 'SHOP-00', message: '[SHOP-00] Từ ngày phải trước đến ngày' });
+        }
+        for (const item of plan.items) {
+            if (!item.recipe) continue;
+            const ngayMon = new Date(item.date);
+            ngayMon.setHours(0, 0, 0, 0);
+            if (ngayChon.size > 0) {
+                const ma = `${ngayMon.getFullYear()}-${String(ngayMon.getMonth() + 1).padStart(2, '0')}-${String(ngayMon.getDate()).padStart(2, '0')}`;
+                if (!ngayChon.has(ma)) continue;
+            } else {
+            if (tu) {
+                const moc = new Date(tu);
+                moc.setHours(0, 0, 0, 0);
+                if (ngayMon < moc) continue;
+            }
+            if (den) {
+                const moc = new Date(den);
+                moc.setHours(0, 0, 0, 0);
+                if (ngayMon > moc) continue;
+            }
+            }
+            for (const nl of item.recipe.ingredients) {
+                const kq = scaleQuantity(Number(nl.quantity), item.recipe.servings, item.servings);
+                daScale.push({
+                    internalIngredientId: nl.internalIngredientId ?? undefined,
+                    originalText: nl.originalText,
+                    quantity: kq.quantity,
+                    unit: nl.unit,
+                });
+            }
+        }
+        const cacMon = this.thanhMonLuu(aggregateQuantities(daScale));
 
-  private async createList(
-    userId: string,
-    input: { name: string; sourceType: string; sourceId: string; lines: AggregatedIngredientLine[] },
-  ) {
-    const name = input.name.length > MAX_NAME_LENGTH ? input.name.slice(0, MAX_NAME_LENGTH) : input.name;
-    return this.prisma.shoppingList.create({
-      data: {
-        userId,
-        name,
-        sourceType: input.sourceType,
-        sourceId: input.sourceId,
-        status: ShoppingListStatus.ACTIVE,
-        items: {
-          create: input.lines.map((line, index) => ({
-            internalIngredientId: line.internalIngredientId ?? null,
-            originalText: line.originalText.length > 500 ? line.originalText.slice(0, 500) : line.originalText,
-            quantity: new Prisma.Decimal(line.quantity),
-            unit: line.unit,
-            sortOrder: index + 1,
-          })),
-        },
-      },
-      include: { items: { orderBy: { sortOrder: 'asc' } } },
-    });
-  }
+        const list = await this.prisma.shoppingList.create({
+            data: {
+                userId,
+                name: `Đi chợ - ${plan.name}`,
+                sourceType: 'MEAL_PLAN',
+                sourceId: plan.id,
+                items: { create: cacMon },
+            },
+            include: { items: { orderBy: { sortOrder: 'asc' } } },
+        });
 
-  private async nextSortOrder(listId: string) {
-    const last = await this.prisma.shoppingListItem.findFirst({
-      where: { shoppingListId: listId },
-      orderBy: { sortOrder: 'desc' },
-      select: { sortOrder: true },
-    });
-    return (last?.sortOrder ?? 0) + 1;
-  }
+        return this.toDanhSach(list);
+    }
+
+    // BR-SHOP: Sinh danh sách đi chợ từ 1 công thức (mobile nút "Thêm hết vào giỏ")
+    async taoTuCongThuc(userId: string, congThucId: string, khauPhan?: number) {
+        const recipe = await this.prisma.recipe.findFirst({
+            where: { id: congThucId, deletedAt: null, status: 'APPROVED' },
+            include: { ingredients: { orderBy: { sortOrder: 'asc' } } },
+        });
+        if (!recipe) {
+            throw new NotFoundException({
+                code: 'REC-04',
+                message: '[REC-04] Chỉ tạo được từ món đã duyệt',
+            });
+        }
+        const gop = generateShoppingItems(
+            recipe.ingredients.map((nl) => ({
+                internalIngredientId: nl.internalIngredientId ?? undefined,
+                originalText: nl.originalText,
+                quantity: Number(nl.quantity),
+                unit: nl.unit,
+            })),
+            recipe.servings,
+            khauPhan ?? recipe.servings,
+        );
+        const cacMon = this.thanhMonLuu(gop);
+
+        const list = await this.prisma.shoppingList.create({
+            data: {
+                userId,
+                name: `Đi chợ - ${recipe.title}`,
+                sourceType: 'RECIPE',
+                sourceId: recipe.id,
+                items: { create: cacMon },
+            },
+            include: { items: { orderBy: { sortOrder: 'asc' } } },
+        });
+
+        return this.toDanhSach(list);
+    }
+
+    private thanhMonLuu(gop: Map<string, { quantity: number; unit: string; originalTexts: string[] }>) {
+        // BR-03: Key gộp là internalId (hoặc unmapped_<text>, hoặc <id>_<unit> khi khác đơn vị
+        // không quy đổi được) — tách lại id để lưu DB (UUID không chứa gạch dưới)
+        return [...gop.entries()].map(([khoa, nhom], i) => {
+            let internalIngredientId: string | null = null;
+            if (!khoa.startsWith('unmapped_')) {
+                const cat = khoa.lastIndexOf('_');
+                internalIngredientId = cat > 0 ? khoa.slice(0, cat) : khoa;
+            }
+            return {
+                internalIngredientId,
+                originalText: nhom.originalTexts[0],
+                quantity: Math.round(nhom.quantity * 1000) / 1000,
+                unit: nhom.unit,
+                sortOrder: i,
+            };
+        });
+    }
+
+    private toDanhSach(s: {
+        id: string;
+        name: string;
+        sourceType: string;
+        sourceId: string | null;
+        status: ShoppingListStatus;
+        items: Array<{
+            id: string;
+            internalIngredientId: string | null;
+            originalText: string;
+            quantity: Prisma.Decimal;
+            unit: string;
+            isChecked: boolean;
+            sortOrder: number;
+        }>;
+    }) {
+        return {
+            id: s.id,
+            ten: s.name,
+            loaiNguon: s.sourceType,
+            nguonId: s.sourceId,
+            trangThai: s.status,
+            cacMon: s.items.map((i) => ({
+                id: i.id,
+                nguyenLieuId: i.internalIngredientId,
+                tenGoc: i.originalText,
+                dinhLuong: i.quantity.toString(),
+                donVi: i.unit,
+                daChon: i.isChecked,
+                thuTu: i.sortOrder,
+            })),
+        };
+    }
 }

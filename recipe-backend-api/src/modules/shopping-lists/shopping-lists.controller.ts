@@ -1,141 +1,85 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ShoppingListsService } from './shopping-lists.service';
-import {
-  CreateShoppingListDto,
-  CreateShoppingListItemDto,
-  GenerateFromMealPlanDto,
-  GenerateFromRecipeDto,
-  ShoppingListQueryDto,
-  UpdateShoppingListDto,
-  UpdateShoppingListItemDto,
-} from './dto/shopping-list.dto';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { TrackActivity } from '../activity/track-activity.decorator';
-import { ActivityInterceptor } from '../activity/activity.interceptor';
-import { AuditLog } from '../audit/audit-log.decorator';
-import { AuditInterceptor } from '../audit/audit.interceptor';
+import { TaoDanhSachDiChoDto, MonMoiDto, SuaMonDiChoDto, CapNhatDanhSachDto, TaoTuCongThucDto, TaoTuKeHoachAnDto } from './dto/shopping-list.dto';
+import { JwtAuthGuard } from '../../common/jwt-auth.guard';
 
-
-
-@ApiTags('Shopping Lists')
-@ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard)
 @Controller('shopping-lists')
 export class ShoppingListsController {
-  constructor(private readonly service: ShoppingListsService) {}
+    constructor(private readonly shoppingListsService: ShoppingListsService) {}
 
-  @Get()
-  @ApiOperation({ summary: 'Danh sách mua sắm của tôi (lọc theo trạng thái)' })
-  findAll(@Query() query: ShoppingListQueryDto, @CurrentUser() user: { id: string }) {
-    return this.service.findAll(query, user.id);
-  }
+    @Get()
+    layDanhSach(
+        @Req() req: { user: { id: string } },
+        @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
+        @Query('size', new DefaultValuePipe(20), ParseIntPipe) size: number,
+    ) {
+        // BR-API: Phân trang page/size 0-based, chặn số âm và size quá lớn
+        const finalTrang = Math.max(page, 0);
+        const safeSize = Math.min(Math.max(size, 1), 50);
+        return this.shoppingListsService.layDanhSachCuaNguoiDung(req.user.id, finalTrang, safeSize);
+    }
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(ActivityInterceptor)
-  @TrackActivity('GENERATE_SHOPPING', 'SHOPPING_LIST', { entityIdParam: 'none' })
-  @ApiOperation({ summary: 'Tạo danh sách mua sắm thủ công (hoặc từ công thức nếu có recipeId)' })
-  create(@Body() dto: CreateShoppingListDto, @CurrentUser() user: { id: string }) {
-    return this.service.createManual(dto, user.id);
-  }
+    @Post()
+    taoMoi(@Body() dto: TaoDanhSachDiChoDto, @Req() req: { user: { id: string } }) {
+        return this.shoppingListsService.taoMoi(req.user.id, dto);
+    }
 
-  @Post('generate-from-recipe')
-  @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(ActivityInterceptor)
-  @TrackActivity('GENERATE_SHOPPING', 'SHOPPING_LIST', { entityIdParam: 'none' })
-  @ApiOperation({ summary: 'Tạo danh sách mua sắm từ công thức (BR-03 cộng gộp, BR-04 theo khẩu phần)' })
-  generateFromRecipe(@Body() dto: GenerateFromRecipeDto, @CurrentUser() user: { id: string }) {
-    return this.service.generateFromRecipe(dto, user.id);
-  }
+    @Post('generate-from-meal-plan')
+    taoTuKeHoachAn(@Body() body: TaoTuKeHoachAnDto, @Req() req: { user: { id: string } }) {
+        return this.shoppingListsService.taoTuKeHoachAn(req.user.id, body.mealPlanId, body.tuNgay, body.denNgay, body.cacNgay);
+    }
 
-  @Post('generate-from-meal-plan')
-  @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(ActivityInterceptor)
-  @TrackActivity('GENERATE_SHOPPING', 'SHOPPING_LIST', { entityIdParam: 'none' })
-  @ApiOperation({ summary: 'Tạo danh sách mua sắm từ kế hoạch bữa ăn (BR-03, BR-04)' })
-  generateFromMealPlan(
-    @Body() dto: GenerateFromMealPlanDto,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.service.generateFromMealPlan(dto.mealPlanId, dto.name, user.id);
-  }
+    @Post('generate-from-recipe')
+    taoTuCongThuc(@Body() body: TaoTuCongThucDto, @Req() req: { user: { id: string } }) {
+        return this.shoppingListsService.taoTuCongThuc(req.user.id, body.congThucId, body.khauPhan);
+    }
 
-  @Get(':id')
-  @UseInterceptors(ActivityInterceptor)
-  @TrackActivity('VIEW', 'SHOPPING_LIST')
-  @ApiOperation({ summary: 'Chi tiết danh sách mua sắm kèm tiến độ tick' })
-  findOne(@Param('id') id: string, @CurrentUser() user: { id: string }) {
-    return this.service.findOne(id, user.id);
-  }
+    @Get(':id')
+    layChiTiet(@Param('id') id: string, @Req() req: { user: { id: string } }) {
+        return this.shoppingListsService.layChiTiet(id, req.user.id);
+    }
 
-  @Patch(':id')
-  @UseInterceptors(AuditInterceptor)
-  @AuditLog('UPDATE', 'SHOPPING_LIST')
-  @ApiOperation({ summary: 'Đổi tên / trạng thái danh sách' })
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateShoppingListDto,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.service.update(id, dto, user.id);
-  }
+    @Delete(':id')
+    xoa(@Param('id') id: string, @Req() req: { user: { id: string } }) {
+        return this.shoppingListsService.xoa(id, req.user.id);
+    }
 
-  @Delete(':id')
-  @HttpCode(HttpStatus.OK)
-  @UseInterceptors(AuditInterceptor)
-  @AuditLog('DELETE', 'SHOPPING_LIST')
-  @ApiOperation({ summary: 'Lưu trữ danh sách mua sắm (ARCHIVED)' })
-  remove(@Param('id') id: string, @CurrentUser() user: { id: string }) {
-    return this.service.remove(id, user.id);
-  }
+    @Patch(':id')
+    capNhat(
+        @Param('id') id: string,
+        @Body() dto: CapNhatDanhSachDto,
+        @Req() req: { user: { id: string } },
+    ) {
+        return this.shoppingListsService.capNhat(id, req.user.id, dto);
+    }
 
-  @Post(':id/items')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Thêm món thủ công vào danh sách' })
-  addItem(
-    @Param('id') id: string,
-    @Body() dto: CreateShoppingListItemDto,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.service.addItem(id, dto, user.id);
-  }
+    @Post(':id/items')
+    themMon(
+        @Param('id') id: string,
+        @Body() dto: MonMoiDto,
+        @Req() req: { user: { id: string } },
+    ) {
+        return this.shoppingListsService.themMon(id, req.user.id, dto);
+    }
 
-  @Patch(':id/items/:itemId')
-  @UseInterceptors(AuditInterceptor)
-  @AuditLog('UPDATE', 'SHOPPING_LIST')
-  @ApiOperation({ summary: 'Tick / bỏ tick, chỉnh định lượng hoặc thứ tự của món' })
-  updateItem(
-    @Param('id') id: string,
-    @Param('itemId') itemId: string,
-    @Body() dto: UpdateShoppingListItemDto,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.service.updateItem(id, itemId, dto, user.id);
-  }
+    @Patch(':id/items/:itemId')
+    suaMon(
+        @Param('id') id: string,
+        @Param('itemId') itemId: string,
+        @Body() dto: SuaMonDiChoDto,
+        @Req() req: { user: { id: string } },
+    ) {
+        // BR-SHOP: Một endpoint sửa món (tick mua + tên + lượng + đơn vị)
+        return this.shoppingListsService.suaMon(id, itemId, req.user.id, dto);
+    }
 
-  @Delete(':id/items/:itemId')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Xóa một món khỏi danh sách' })
-  removeItem(
-    @Param('id') id: string,
-    @Param('itemId') itemId: string,
-    @CurrentUser() user: { id: string },
-  ) {
-    return this.service.removeItem(id, itemId, user.id);
-  }
+    @Delete(':id/items/:itemId')
+    xoaMon(
+        @Param('id') id: string,
+        @Param('itemId') itemId: string,
+        @Req() req: { user: { id: string } },
+    ) {
+        return this.shoppingListsService.xoaMon(id, itemId, req.user.id);
+    }
 }
