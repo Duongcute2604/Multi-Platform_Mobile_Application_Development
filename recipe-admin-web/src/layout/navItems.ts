@@ -14,7 +14,9 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Trang chủ', icon: '📊' },
   { to: '/recipes', label: 'Công thức', icon: '📖' },
   { to: '/recipes/pending', label: 'Duyệt bài', icon: '✅' },
-  { to: '/food-check', label: 'Duyệt món', icon: '🥗' },
+  // Nhan cu "Duyet mon" bi lech: trang nay kiem tra tuong tac thuc pham
+  // (POST /food-compatibility/check), khong phai man duyet cong thuc.
+  { to: '/food-check', label: 'Tương tác món', icon: '🥗' },
   { to: '/ingredients', label: 'Nguyên liệu', icon: '🧂' },
   { to: '/references', label: 'References', icon: '🌐' },
   { to: '/categories', label: 'Danh mục', icon: '📁' },

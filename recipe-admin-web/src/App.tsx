@@ -8,6 +8,7 @@ import ReferencesPage from './pages/references/ReferencesPage';
 import UsersPage from './pages/users/UsersPage';
 import IngredientsPage from './pages/IngredientsPage';
 import DanhMuc from './pages/admin/DanhMuc';
+import FoodCheck from './pages/admin/FoodCheck';
 import Nhan from './pages/admin/Nhan';
 import MealPlan from './pages/admin/MealPlan';
 import ShoppingList from './pages/admin/ShoppingList';
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/recipes" element={<AllRecipesPage />} />
         <Route path="/recipes/pending" element={<PendingRecipesPage />} />
+        <Route path="/food-check" element={<FoodCheck />} />
         <Route path="/ingredients" element={<IngredientsPage />} />
         <Route path="/references" element={<ReferencesPage />} />
         <Route path="/users" element={<UsersPage />} />
