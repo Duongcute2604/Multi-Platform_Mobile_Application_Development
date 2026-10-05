@@ -5,6 +5,8 @@ import IngredientsPage from './pages/IngredientsPage';
 import RecipeReferencesPage from './pages/RecipeReferencesPage';
 import PendingRecipesPage from './pages/PendingRecipesPage';
 import UsersPage from './pages/UsersPage';
+import DanhMuc from './pages/admin/DanhMuc';
+import Nhan from './pages/admin/Nhan';
 
 export default function App() {
   return (
@@ -31,6 +33,8 @@ export default function App() {
           <Route path="/ingredients" element={<IngredientsPage />} />
           <Route path="/references" element={<RecipeReferencesPage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/categories" element={<DanhMuc />} />
+          <Route path="/tags" element={<Nhan />} />
         </Routes>
       </main>
     </div>

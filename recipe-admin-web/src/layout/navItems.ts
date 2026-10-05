@@ -17,5 +17,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/food-check', label: 'Duyệt món', icon: '🥗' },
   { to: '/ingredients', label: 'Nguyên liệu', icon: '🧂' },
   { to: '/references', label: 'References', icon: '🌐' },
+  { to: '/categories', label: 'Danh mục', icon: '📁' },
+  { to: '/tags', label: 'Nhãn (Tag)', icon: '🏷️' },
   { to: '/users', label: 'Người dùng', icon: '👥' },
 ];
