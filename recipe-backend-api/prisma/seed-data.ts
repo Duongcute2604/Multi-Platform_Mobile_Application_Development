@@ -907,4 +907,556 @@ export const MON_SEED: MonSeed[] = [
     ],
     dinhDuong: { calories: 470, protein: 34, carbs: 46, fat: 16 },
   },
+
+  // -------------------------------------------------------------------------
+  {
+    ten: 'Bánh cuốn',
+    moTa:
+      'Lớp bánh gạo mỏng tang cuộn nhân thịt mộc nhĩ, rưới mỡ hành và chấm nước mắm pha — món ăn sáng nhẹ bụng của người Bắc.',
+    anh: anhMon('mon-viet-16.jpg'),
+    thoiGianNau: 35,
+    thoiGianChuanBi: 40,
+    khauPhan: 4,
+    danhMuc: 'Món khai vị',
+    the: ['truyền thống', 'nhanh gọn'],
+    nguyenLieu: [
+      { ten: 'bột gạo', soLuong: 300, donVi: 'g' },
+      { ten: 'bột năng', soLuong: 40, donVi: 'g' },
+      { ten: 'thịt lợn băm', soLuong: 250, donVi: 'g' },
+      { ten: 'mộc nhĩ khô', soLuong: 15, donVi: 'g' },
+      { ten: 'hành khô', soLuong: 40, donVi: 'g' },
+      { ten: 'hành lá', soLuong: 60, donVi: 'g' },
+      { ten: 'nước mắm', soLuong: 60, donVi: 'ml' },
+      { ten: 'đường, dầu ăn', soLuong: 60, donVi: 'g' },
+      { ten: 'lạp xưởng (kèm)', soLuong: 120, donVi: 'g' },
+    ],
+    buoc: [
+      {
+        noiDung:
+          'Pha bột: bột gạo + bột năng + 1 thìa muối, đổ 600ml nước ấm khuấy tan rồi để nghỉ 30 phút cho bột sánh lại.',
+        anh: POOL_BUOC.tron,
+      },
+      {
+        noiDung:
+          'Mộc nhĩ ngâm nước nóng 20 phút, bỏ chân rồi thái sợi; hành khô băm nhuyễn, hành lá thái nhỏ riêng phần trắng và xanh.',
+        anh: POOL_BUOC.cat,
+      },
+      {
+        noiDung:
+          'Phi thơm hành khô, cho thịt băm vào xào chín, thêm mộc nhĩ, 1 thìa nước mắm và ½ thìa tiêu; nêm hơi mặn một chút.',
+        anh: POOL_BUOC.xao,
+      },
+      {
+        noiDung:
+          'Tráng bánh: quét dầu mỏng lên chảo chống dính, đổ một vá bột dàn mỏng, đậy nắp 40 giây thấy bánh trong là chín.',
+        anh: POOL_BUOC.chien,
+      },
+      {
+        noiDung:
+          'Lấy bánh ra, cho 1 thìa nhân vào gần mép, cuộn tròn và gập hai đầu vào trong. Làm tới đâu ăn tới đó để bánh không khô.',
+        anh: POOL_BUOC.bay,
+      },
+      {
+        noiDung:
+          'Mỡ hành: hành lá thái nhỏ tưới dầu nóng già; pha nước chấm đường + nước mắm + chanh theo tỉ lệ 3:2:1, thêm ớt.',
+        anh: POOL_BUOC.uop,
+      },
+    ],
+    dinhDuong: { calories: 330, protein: 16, carbs: 52, fat: 8 },
+  },
+
+  // -------------------------------------------------------------------------
+  {
+    ten: 'Hủ tiếu Nam Vang',
+    moTa:
+      'Nước dùng trong ngọt từ xương heo ninh cùng tôm khô và mực, sợi hủ tiếu mềm dai, thêm tôm thịt đầy đặn — món ăn chiều phổ biến ở Sài Gòn.',
+    anh: anhMon('mon-viet-17.jpg'),
+    thoiGianNau: 70,
+    thoiGianChuanBi: 40,
+    khauPhan: 4,
+    danhMuc: 'Bún & Phở',
+    the: ['truyền thống', 'đậm đà'],
+    nguyenLieu: [
+      { ten: 'xương heo', soLuong: 900, donVi: 'g' },
+      { ten: 'hủ tiếu khô', soLuong: 400, donVi: 'g' },
+      { ten: 'tôm sú', soLuong: 300, donVi: 'g' },
+      { ten: 'mực tươi', soLuong: 200, donVi: 'g' },
+      { ten: 'thịt băm', soLuong: 150, donVi: 'g' },
+      { ten: 'tôm khô', soLuong: 40, donVi: 'g' },
+      { ten: 'hành lá, hẹ, cần tây', soLuong: 100, donVi: 'g' },
+      { ten: 'nước mắm, đường, tỏi', soLuong: 70, donVi: 'g' },
+    ],
+    buoc: [
+      {
+        noiDung:
+          'Xương heo chần sôi 5 phút, rửa sạch rồi hầm lửa nhỏ 45 phút cùng tôm khô; hớt bọt liên tục để nước dùng trong.',
+        anh: POOL_BUOC.ninh,
+      },
+      {
+        noiDung:
+          'Tôm lột vỏ lấy đầu phi thơm lấy dầu màu; thịt băm ướp 1 thìa nước mắm, ½ thìa đường và tỏi băm 15 phút.',
+        anh: POOL_BUOC.uop,
+      },
+      {
+        noiDung:
+          'Mực làm sạch, cắt khoanh vừa ăn; tôm để nguyên con. Nhúng qua nước sôi 30 giây rồi vớt ra để ráo.',
+        anh: POOL_BUOC.cat,
+      },
+      {
+        noiDung:
+          'Nêm nước dùng bằng nước mắm và đường, nếm ngọt hậu là đạt; nêm trước khi cho rau tránh nước bị đục.',
+        anh: POOL_BUOC.kho,
+      },
+      {
+        noiDung:
+          'Hủ tiếu chần qua nước sôi 40 giây cho mềm, vớt ra tô chan nước dùng đang sôi; xếp tôm, mực và thịt băm lên trên.',
+        anh: POOL_BUOC.bay,
+      },
+      {
+        noiDung: 'Rắc hành lá, hẹ và tiêu; ăn kèm rau sống, giá và ớt sa tế theo sở thích.',
+        anh: POOL_BUOC.rau,
+      },
+    ],
+    dinhDuong: { calories: 540, protein: 30, carbs: 70, fat: 15 },
+  },
+
+  // -------------------------------------------------------------------------
+  {
+    ten: 'Mì Quảng',
+    moTa:
+      'Sợi mì vàng dày thấm nước dùng cốt dừa béo, gà ta và tôm rang riềng thơm nồng, ăn kèm bánh tráng giòn và rau sống — đặc sản Quảng Nam.',
+    anh: anhMon('mon-viet-18.jpg'),
+    thoiGianNau: 60,
+    thoiGianChuanBi: 50,
+    khauPhan: 4,
+    danhMuc: 'Bún & Phở',
+    the: ['truyền thống', 'cay nồng'],
+    nguyenLieu: [
+      { ten: 'mì Quảng', soLuong: 400, donVi: 'g' },
+      { ten: 'ức gà', soLuong: 500, donVi: 'g' },
+      { ten: 'tôm sú', soLuong: 250, donVi: 'g' },
+      { ten: 'nước cốt dừa', soLuong: 200, donVi: 'ml' },
+      { ten: 'riềng, sả', soLuong: 60, donVi: 'g' },
+      { ten: 'đậu phộng rang', soLuong: 80, donVi: 'g' },
+      { ten: 'bắp chuối, rau răm', soLuong: 150, donVi: 'g' },
+      { ten: 'nước mắm, ớt bột, bột nghệ', soLuong: 50, donVi: 'g' },
+    ],
+    buoc: [
+      {
+        noiDung:
+          'Gà chặt miếng vừa, tôm bỏ vỏ đầu; ướp 2 thìa nước mắm, 1 thìa ớt bột, ½ thìa bột nghệ và riềng sả băm 30 phút.',
+        anh: POOL_BUOC.uop,
+      },
+      {
+        noiDung:
+          'Phi thơm riềng sả, cho gà vào xào săn thịt 5 phút rồi đổ tôm vào đảo cùng cho tới khi tôm đổi màu.',
+        anh: POOL_BUOC.xao,
+      },
+      {
+        noiDung:
+          'Chan nước cốt dừa vào nồi, thêm 300ml nước lã, nêm mắm và đường; nấu lửa nhỏ 20 phút cho thấm.',
+        anh: POOL_BUOC.ninh,
+      },
+      {
+        noiDung:
+          'Bắp chuối thái sợi mỏng ngâm nước chanh cho trắng, rau răm nhặt rửa để ráo; đậu phộng rang giã dập.',
+        anh: POOL_BUOC.cat,
+      },
+      {
+        noiDung:
+          'Mì chần qua nước sôi cho mềm, chia tô; chan nước dùng hơi sệt (ít nước hơn bún phở) và múc gà tôm lên trên.',
+        anh: POOL_BUOC.bay,
+      },
+      {
+        noiDung: 'Rắc đậu phộng, bánh tráng nướng giòn; trộn đều rồi ăn với rau sống và ớt tươi.',
+        anh: POOL_BUOC.rau,
+      },
+    ],
+    dinhDuong: { calories: 610, protein: 34, carbs: 68, fat: 24 },
+  },
+
+  // -------------------------------------------------------------------------
+  {
+    ten: 'Bún riêu cua',
+    moTa:
+      'Nước riêu cua đồng béo bùng bột ớt dầu điều đỏ au, cà chua chua ngọt, thêm đậu hũ và chả giò — món bún quen thuộc mọi hàng quán.',
+    anh: anhMon('mon-viet-19.jpg'),
+    thoiGianNau: 60,
+    thoiGianChuanBi: 50,
+    khauPhan: 4,
+    danhMuc: 'Bún & Phở',
+    the: ['tươi mát', 'cay nồng'],
+    nguyenLieu: [
+      { ten: 'cua đồng', soLuong: 600, donVi: 'g' },
+      { ten: 'bún tươi', soLuong: 500, donVi: 'g' },
+      { ten: 'cà chua', soLuong: 350, donVi: 'g' },
+      { ten: 'đậu hũ', soLuong: 300, donVi: 'g' },
+      { ten: 'me', soLuong: 50, donVi: 'g' },
+      { ten: 'dầu điều (dầu annatto)', soLuong: 40, donVi: 'ml' },
+      { ten: 'mắm tôm, đường', soLuong: 70, donVi: 'g' },
+      { ten: 'hành lá, rau sống', soLuong: 200, donVi: 'g' },
+    ],
+    buoc: [
+      {
+        noiDung:
+          'Cua làm sạch, giã lọc lấy nước, gạch để riêng; đánh nước cua với 1 thìa muối rồi bắc lên bếp khuấy đều tới khi riêu nổi lên.',
+        anh: POOL_BUOC.tron,
+      },
+      {
+        noiDung:
+          'Cà chua bổ cau, đậu hũ cắt miếng; phi thơm hành rồi đổ cà chua vào xào nhuyễn, thêm dầu điều cho nước đỏ đẹp.',
+        anh: POOL_BUOC.xao,
+      },
+      {
+        noiDung:
+          'Đổ nước dùng vào nồi, thả từng miếng riêu cua vào; thấy riêu kết lại thành tảng là chín, không khuấy vỡ.',
+        anh: POOL_BUOC.ninh,
+      },
+      {
+        noiDung:
+          'Nêm mắm tôm, đường và nước cốt me; nếm chua ngọt đậm vừa miệng rồi cho đậu hũ vào nấu thêm 5 phút.',
+        anh: POOL_BUOC.kho,
+      },
+      {
+        noiDung: 'Bún chần qua nước sôi, xếp ra tô; chan nước riêu, gạch cua và cà chua lên trên.',
+        anh: POOL_BUOC.bay,
+      },
+      {
+        noiDung: 'Rắc hành lá, ăn kèm rau sống (peria, tía tô, xà lách) và ớt bột nếu thích cay.',
+        anh: POOL_BUOC.rau,
+      },
+    ],
+    dinhDuong: { calories: 450, protein: 26, carbs: 58, fat: 14 },
+  },
+
+  // -------------------------------------------------------------------------
+  {
+    ten: 'Bún đậu mắm tôm',
+    moTa:
+      'Bún trắng, đậu phụ chiên vàng giòn và thịt luộc chấm mắm tôm pha chanh ớt — combo bình dân nhưng lại gây "nghiện" nhất làng ẩm thực Bắc.',
+    anh: anhMon('mon-viet-20.jpg'),
+    thoiGianNau: 40,
+    thoiGianChuanBi: 30,
+    khauPhan: 4,
+    danhMuc: 'Món chính',
+    the: ['truyền thống', 'đậm đà'],
+    nguyenLieu: [
+      { ten: 'bún tươi', soLuong: 400, donVi: 'g' },
+      { ten: 'đậu phụ', soLuong: 400, donVi: 'g' },
+      { ten: 'thịt ba chỉ', soLuong: 300, donVi: 'g' },
+      { ten: 'chả cốm', soLuong: 150, donVi: 'g' },
+      { ten: 'mắm tôm', soLuong: 80, donVi: 'ml' },
+      { ten: 'tỏi, ớt, chanh', soLuong: 80, donVi: 'g' },
+      { ten: 'rau sống (perilla, đinh lăng, xà lách)', soLuong: 300, donVi: 'g' },
+      { ten: 'đường, dầu ăn', soLuong: 60, donVi: 'g' },
+    ],
+    buoc: [
+      {
+        noiDung:
+          'Đậu phụ cắt miếng dày 1cm, thấm khô rồi chiên lửa vừa tới khi vỏ vàng giòn; chiên ướt sẽ bắn dầu.',
+        anh: POOL_BUOC.chien,
+      },
+      {
+        noiDung:
+          'Thịt ba chỉ luộc chín với ít hành gừng, vớt ra ngâm nước lạnh cho thịt săn rồi thái lát mỏng.',
+        anh: POOL_BUOC.ninh,
+      },
+      {
+        noiDung:
+          'Chả cốm cắt lát, chiên vàng nhanh 2 phút mỗi mặt; rau sống nhặt rửa thật ráo nước.',
+        anh: POOL_BUOC.cat,
+      },
+      {
+        noiDung:
+          'Pha mắm tôm: 3 thìa mắm tôm + 2 thìa đường + nước cốt chanh, đánh sôi bọt lên rồi thêm tỏi ớt băm.',
+        anh: POOL_BUOC.tron,
+      },
+      {
+        noiDung:
+          'Bún cắt khúc vừa ăn, xếp cùng đậu, thịt, chả cốm và rau ra đĩa lớn để mọi người tự lấy.',
+        anh: POOL_BUOC.bay,
+      },
+      {
+        noiDung: 'Chấm từng miếng đậu và thịt vào mắm tôm, ăn kèm rau thơm cho đỡ ngấy.',
+        anh: POOL_BUOC.rau,
+      },
+    ],
+    dinhDuong: { calories: 560, protein: 28, carbs: 60, fat: 24 },
+  },
+
+  // -------------------------------------------------------------------------
+  {
+    ten: 'Bò lúc lắc',
+    moTa:
+      'Thịt bò thái khối lắc chảo nóng cùng tỏi, ớt chuông và hành tây, sốt tương đen mặn ngọt — món xào nhanh mà vẫn mềm juicy.',
+    anh: anhMon('mon-viet-21.jpg'),
+    thoiGianNau: 25,
+    thoiGianChuanBi: 40,
+    khauPhan: 4,
+    danhMuc: 'Món chính',
+    the: ['nhanh gọn', 'cuối tuần'],
+    nguyenLieu: [
+      { ten: 'thịt thăn bò', soLuong: 600, donVi: 'g' },
+      { ten: 'hành tây', soLuong: 150, donVi: 'g' },
+      { ten: 'ớt chuông', soLuong: 150, donVi: 'g' },
+      { ten: 'tỏi', soLuong: 30, donVi: 'g' },
+      { ten: 'bơ', soLuong: 40, donVi: 'g' },
+      { ten: 'nước tương', soLuong: 60, donVi: 'ml' },
+      { ten: 'đường, bột năng', soLuong: 50, donVi: 'g' },
+      { ten: 'tiêu, dầu ăn', soLuong: 30, donVi: 'g' },
+    ],
+    buoc: [
+      {
+        noiDung:
+          'Bò thái khối vuông 2cm, ướp 1 thìa nước tương, 1 thìa đường, ½ thìa tiêu và 1 thìa bột năng 30 phút cho thấm.',
+        anh: POOL_BUOC.uop,
+      },
+      {
+        noiDung:
+          'Hành tây và ớt chuông thái miếng vừa ăn; tỏi băm nhỏ. Làm nóng chảo thật kỹ trước khi đổ dầu.',
+        anh: POOL_BUOC.cat,
+      },
+      {
+        noiDung:
+          'Xào bò trên lửa lớn 2 phút, lắc chảo liên tục cho thịt săn mà không ra nước; vớt ra để riêng.',
+        anh: POOL_BUOC.xao,
+      },
+      {
+        noiDung:
+          'Cùng chảo đó phi thơm tỏi, cho hành tây và ớt chuông vào xào 2 phút giữ độ giòn.',
+        anh: POOL_BUOC.xao,
+      },
+      {
+        noiDung:
+          'Cho bò quay lại chảo, đổ hỗn hợp nước tương + đường + 2 thìa nước đun sôi, đảo đều cho sốt sệt bám thịt.',
+        anh: POOL_BUOC.kho,
+      },
+      {
+        noiDung: 'Thêm miếng bơ cho bóng, rắc tiêu và ăn ngay với cơm nóng hoặc bánh mì.',
+        anh: POOL_BUOC.bay,
+      },
+    ],
+    dinhDuong: { calories: 520, protein: 40, carbs: 34, fat: 27 },
+  },
+
+  // -------------------------------------------------------------------------
+  {
+    ten: 'Nem nướng',
+    moTa:
+      'Viên thịt heo quết dai nướng trên than hoa, chấm mắm nướng mặn ngọt, ăn kèm bún và rau sống — món nướng được yêu thích ở Nha Trang.',
+    anh: anhMon('mon-viet-22.jpg'),
+    thoiGianNau: 30,
+    thoiGianChuanBi: 60,
+    khauPhan: 4,
+    danhMuc: 'Lẩu & Món nướng',
+    the: ['cuối tuần', 'đậm đà'],
+    nguyenLieu: [
+      { ten: 'thịt heo xay', soLuong: 600, donVi: 'g' },
+      { ten: 'mỡ heo', soLuong: 50, donVi: 'g' },
+      { ten: 'tỏi, hành tím', soLuong: 50, donVi: 'g' },
+      { ten: 'đường, nước mắm', soLuong: 80, donVi: 'g' },
+      { ten: 'tiêu, bột nêm', soLuong: 20, donVi: 'g' },
+      { ten: 'bún tươi, rau sống', soLuong: 400, donVi: 'g' },
+      { ten: 'tương ớt, đậu phộng', soLuong: 80, donVi: 'g' },
+      { ten: 'que tre (ngâm nước)', soLuong: 30, donVi: 'cái' },
+    ],
+    buoc: [
+      {
+        noiDung:
+          'Thịt xay cùng mỡ heo cho dai; ướp 2 thìa đường, 1 thìa nước mắm, 1 thìa bột nêm, tỏi hành băm và ½ thìa tiêu.',
+        anh: POOL_BUOC.uop,
+      },
+      {
+        noiDung:
+          'Quết thịt dẻo khoảng 5 phút cho hỗn hợp dính đều; viên tròn hoặc miếng dẹt dài, ghim que tre.',
+        anh: POOL_BUOC.tron,
+      },
+      {
+        noiDung:
+          'Nướng trên than lửa vừa 8-10 phút, trở đều và quét thêm nước ướp thừa 2-3 lần để nem không khô.',
+        anh: POOL_BUOC.nuong,
+      },
+      {
+        noiDung:
+          'Nước chấm: phi thơm hành, thêm 2 thìa đường + 2 thìa nước mắm + 3 thìa nước, khuấy sền sệt rồi bỏ xác hành.',
+        anh: POOL_BUOC.kho,
+      },
+      {
+        noiDung: 'Bún cắt khúc, rau sống nhặt rửa; bày nem ra đĩa kèm rau và bún.',
+        anh: POOL_BUOC.bay,
+      },
+      {
+        noiDung: 'Lấy nem ra khỏi que, cuộn với bún và rau rồi chấm mắm nướng đang ấm.',
+        anh: POOL_BUOC.rau,
+      },
+    ],
+    dinhDuong: { calories: 480, protein: 32, carbs: 44, fat: 22 },
+  },
+
+  // -------------------------------------------------------------------------
+  {
+    ten: 'Bánh bèo',
+    moTa:
+      'Đĩa bánh trắng mịn đúc từng chiếc nhỏ, nhân tôm thịt đỏ au rưới mỡ hành rang hẹ — món ăn vặt Huế dân dã mà cuốn hút.',
+    anh: anhMon('mon-viet-23.jpg'),
+    thoiGianNau: 40,
+    thoiGianChuanBi: 40,
+    khauPhan: 4,
+    danhMuc: 'Món khai vị',
+    the: ['truyền thống', 'nhanh gọn'],
+    nguyenLieu: [
+      { ten: 'bột gạo', soLuong: 250, donVi: 'g' },
+      { ten: 'bột năng', soLuong: 60, donVi: 'g' },
+      { ten: 'tôm bóc vỏ', soLuong: 200, donVi: 'g' },
+      { ten: 'thịt băm', soLuong: 150, donVi: 'g' },
+      { ten: 'hành lá', soLuong: 80, donVi: 'g' },
+      { ten: 'đậu phộng rang', soLuong: 60, donVi: 'g' },
+      { ten: 'nước mắm, đường', soLuong: 70, donVi: 'g' },
+      { ten: 'tóp mỡ, dầu ăn', soLuong: 50, donVi: 'g' },
+    ],
+    buoc: [
+      {
+        noiDung:
+          'Pha bột: bột gạo + bột năng + 500ml nước lạnh khuấy tan, để yên 20 phút rồi chắt bớt nước trong.',
+        anh: POOL_BUOC.tron,
+      },
+      {
+        noiDung:
+          'Tôm bóc vỏ băm nhỏ, thịt băm ướp 1 thìa nước mắm và tỏi băm; xào chín tới khi tôm chuyển màu đỏ.',
+        anh: POOL_BUOC.xao,
+      },
+      {
+        noiDung:
+          'Hành lá thái nhỏ rưới dầu nóng già làm mỡ hành; đậu phộng rang giã dập để riêng.',
+        anh: POOL_BUOC.cat,
+      },
+      {
+        noiDung:
+          'Đổ bột vào khuôn (hoặc chén nhỏ) đến ¾, hấp cách thủy 4 phút thấy bánh trong và hơi lún là chín.',
+        anh: POOL_BUOC.ninh,
+      },
+      {
+        noiDung:
+          'Múc bánh ra đĩa, cho 1 thìa nhân tôm thịt lên giữa, rưới mỡ hành và tóp mỡ.',
+        anh: POOL_BUOC.bay,
+      },
+      {
+        noiDung:
+          'Pha nước chấm: 2 thìa nước mắm + 2 thìa đường + 2 thìa nước, chan lên bánh rồi rắc đậu phộng.',
+        anh: POOL_BUOC.uop,
+      },
+    ],
+    dinhDuong: { calories: 340, protein: 15, carbs: 54, fat: 9 },
+  },
+
+  // -------------------------------------------------------------------------
+  {
+    ten: 'Chè bà ba',
+    moTa:
+      'Hỗn hợp khoai môn, khoai lang, đậu xanh và bột lọc trong vắt nấu với nước cốt dừa béo, thơm mùi lá dứa — món tráng miệng miền Nam.',
+    anh: anhMon('mon-viet-24.jpg'),
+    thoiGianNau: 50,
+    thoiGianChuanBi: 30,
+    khauPhan: 6,
+    danhMuc: 'Món tráng miệng',
+    the: ['truyền thống', 'tươi mát'],
+    nguyenLieu: [
+      { ten: 'khoai lang', soLuong: 250, donVi: 'g' },
+      { ten: 'khoai môn', soLuong: 200, donVi: 'g' },
+      { ten: 'đậu xanh đã bỏ vỏ', soLuong: 120, donVi: 'g' },
+      { ten: 'bột lọc khô', soLuong: 100, donVi: 'g' },
+      { ten: 'nước cốt dừa', soLuong: 300, donVi: 'ml' },
+      { ten: 'đường', soLuong: 200, donVi: 'g' },
+      { ten: 'lá dứa', soLuong: 20, donVi: 'g' },
+      { ten: 'bột năng', soLuong: 30, donVi: 'g' },
+    ],
+    buoc: [
+      {
+        noiDung:
+          'Đậu xanh ngâm 2 giờ rồi hấp chín, dầm nhuyễn; lá dứa cột gọn để tạo hương.',
+        anh: POOL_BUOC.cat,
+      },
+      {
+        noiDung:
+          'Khoai lang và khoai môn gọt vỏ, cắt khối vừa ăn; ngâm nước muối loãng 10 phút cho không thâm rồi rửa lại.',
+        anh: POOL_BUOC.cat,
+      },
+      {
+        noiDung:
+          'Bột lọc luộc chín trong vắt, vớt ra ngâm nước lạnh để viên bột không dính vào nhau.',
+        anh: POOL_BUOC.ninh,
+      },
+      {
+        noiDung:
+          'Nấu 1 lít nước sôi cùng lá dứa, cho khoai vào nấu lửa vừa 10 phút tới khi khoai chín mềm.',
+        anh: POOL_BUOC.ninh,
+      },
+      {
+        noiDung:
+          'Nêm đường, cho đậu xanh và bột năng pha loãng vào khuấy cho sánh; cuối cùng đổ nước cốt dừa, nấu sôi lăn tăn là tắt bếp.',
+        anh: POOL_BUOC.tron,
+      },
+      {
+        noiDung: 'Múc chè ra chén, dọn nóng hoặc ướp lạnh; thêm chút nước cốt dừa tươi lên trên.',
+        anh: POOL_BUOC.bay,
+      },
+    ],
+    dinhDuong: { calories: 380, protein: 8, carbs: 76, fat: 9 },
+  },
+
+  // -------------------------------------------------------------------------
+  {
+    ten: 'Cháo lòng',
+    moTa:
+      'Cháo trắng nấu từ nước dùng ruốc, lòng heo luộc giòn sạch, rắc tiêu hành và ăn kèm quẩy giòn — bữa sáng ấm bụng của người miền Nam.',
+    anh: anhMon('mon-viet-25.jpg'),
+    thoiGianNau: 70,
+    thoiGianChuanBi: 40,
+    khauPhan: 4,
+    danhMuc: 'Món chính',
+    the: ['truyền thống', 'đậm đà'],
+    nguyenLieu: [
+      { ten: 'gạo tám', soLuong: 250, donVi: 'g' },
+      { ten: 'lòng heo (dồi, dạ dày, gan)', soLuong: 600, donVi: 'g' },
+      { ten: 'ruốc khô', soLuong: 40, donVi: 'g' },
+      { ten: 'gừng, hành tím', soLuong: 60, donVi: 'g' },
+      { ten: 'hành lá, rau răm', soLuong: 100, donVi: 'g' },
+      { ten: 'tiêu, nước mắm', soLuong: 40, donVi: 'g' },
+      { ten: 'quẩy', soLuong: 100, donVi: 'g' },
+      { ten: 'tỏi, ớt', soLuong: 40, donVi: 'g' },
+    ],
+    buoc: [
+      {
+        noiDung:
+          'Lòng heo rửa với chanh và muối cho hết hôi, chần sôi với gừng đập dập rồi luộc chín tới 15 phút, thái miếng vừa.',
+        anh: POOL_BUOC.ninh,
+      },
+      {
+        noiDung:
+          'Gạo vo sạch, rang sơ với ít dầu cho hạt thơm rồi đổ 1,5 lít nước vào ninh lửa nhỏ 45 phút, thỉnh thoảng khuấy.',
+        anh: POOL_BUOC.kho,
+      },
+      {
+        noiDung:
+          'Ruốc giã mịn, rang thơm rồi đổ nước vào lọc lấy nước ruốc; chắt phần nước này nấu cháo cho ngọt.',
+        anh: POOL_BUOC.rang,
+      },
+      {
+        noiDung:
+          'Hành tím phi thơm, gan và dồi cắt lát xào nhanh với 1 thìa nước mắm cho thấm.',
+        anh: POOL_BUOC.xao,
+      },
+      {
+        noiDung:
+          'Nêm cháo bằng nước mắm và tiêu, cháo sánh mịn là đạt; múc ra tô lớn.',
+        anh: POOL_BUOC.bay,
+      },
+      {
+        noiDung:
+          'Xếp lòng, dồi, gan lên trên, rắc tiêu nhiều và hành lá; ăn kèm quẩy chấm và rau răm.',
+        anh: POOL_BUOC.rau,
+      },
+    ],
+    dinhDuong: { calories: 520, protein: 26, carbs: 62, fat: 20 },
+  },
 ];
