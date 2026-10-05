@@ -6,6 +6,7 @@ import type { FC, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { chayMigration, layDatabase } from '../src/lib/db/database';
 import { queryClient } from '../src/lib/queryClient';
+import { dangKyPushToken } from '../src/lib/thongBao';
 import { useAuthStore } from '../src/stores/authStore';
 
 SplashScreen.preventAutoHideAsync();
@@ -48,6 +49,12 @@ const DieuHuongBaoVe: FC<{ children: ReactNode }> = ({ children }) => {
       else router.replace('/(auth)/login');
     } else if (daDangNhap && trongNhomAuth) router.replace('/(tabs)');
   }, [daKhoiTao, daDangNhap, daXemOnboarding, doan, router]);
+
+  // BR-NOTI: Đăng nhập xong thì đăng ký push token (lỗi bỏ qua, không chặn app)
+  useEffect(() => {
+    if (!daKhoiTao || !daDangNhap) return;
+    dangKyPushToken().catch(() => undefined);
+  }, [daKhoiTao, daDangNhap]);
 
   return <>{children}</>;
 };

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
+import { CommonModule } from './common/common.module';
 import { RecipeReferencesModule } from './modules/recipe-references/recipe-references.module';
 import { IngredientsModule } from './modules/ingredients/ingredients.module';
 import { ExternalMetricsModule } from './modules/external-metrics/external-metrics.module';
@@ -10,6 +11,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { FoodCompatibilityModule } from './modules/food-compatibility/food-compatibility.module';
 import { ActivityModule } from './modules/activity/activity.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { MealPlansModule } from './modules/meal-plans/meal-plans.module';
 import { ShoppingListsModule } from './modules/shopping-lists/shopping-lists.module';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
@@ -21,6 +23,7 @@ import { DanhMucModule } from './modules/danh-muc/danh-muc.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    CommonModule,
     RecipeReferencesModule,
     IngredientsModule,
     ExternalMetricsModule,
@@ -36,6 +39,7 @@ import { DanhMucModule } from './modules/danh-muc/danh-muc.module';
     CommentsModule,
     ReportsModule,
     DanhMucModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

@@ -1,12 +1,16 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, RecipeStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ModeratorActionDto, UserStatusDto } from './dto/admin-action.dto';
 import { AdminUserQueryDto } from './dto/admin-query.dto';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private thongBao: NotificationsService,
+  ) {}
 
   async stats() {
     const [users, recipes, references, ingredients, pending] = await Promise.all([
@@ -109,11 +113,19 @@ export class AdminService {
     if (recipe.status !== 'PENDING') {
       throw new ConflictException('[ADM-05] Chỉ duyệt được công thức ở trạng thái PENDING');
     }
-    return this.prisma.recipe.update({
+    const updated = await this.prisma.recipe.update({
       where: { id },
       data: { status: 'APPROVED' as RecipeStatus, rejectionReason: null },
       select: { title: true, status: true },
     });
+    // BR-NOTI: Báo cho tác giả khi bài được duyệt (lỗi gửi không chặn duyệt)
+    await this.thongBao
+      .guiThongBao(recipe.authorId, 'Công thức đã được duyệt', `Món "${recipe.title}" của bạn đã được đăng.`, {
+        loai: 'recipe_approved',
+        congThucId: id,
+      })
+      .catch(() => undefined);
+    return updated;
   }
 
   // BR-02: Admin reject -> REJECTED + lý do
@@ -123,11 +135,19 @@ export class AdminService {
     if (recipe.status !== 'PENDING') {
       throw new ConflictException('[ADM-05] Chỉ từ chối được công thức ở trạng thái PENDING');
     }
-    return this.prisma.recipe.update({
+    const updated = await this.prisma.recipe.update({
       where: { id },
       data: { status: 'REJECTED' as RecipeStatus, rejectionReason: dto.reason || null },
       select: { title: true, status: true, rejectionReason: true },
     });
+    // BR-NOTI: Báo cho tác giả khi bài bị từ chối (lỗi gửi không chặn từ chối)
+    await this.thongBao
+      .guiThongBao(recipe.authorId, 'Công thức cần chỉnh sửa', `Món "${recipe.title}" chưa được duyệt.${dto.reason ? ` Lý do: ${dto.reason}` : ''}`, {
+        loai: 'recipe_rejected',
+        congThucId: id,
+      })
+      .catch(() => undefined);
+    return updated;
   }
 
   // BR-02: Admin hide -> HIDDEN (ẩn bài vi phạm đã duyệt)
@@ -137,10 +157,18 @@ export class AdminService {
     if (!['APPROVED', 'REJECTED'].includes(recipe.status)) {
       throw new ConflictException('[ADM-06] Chỉ ẩn công thức APPROVED hoặc REJECTED');
     }
-    return this.prisma.recipe.update({
+    const updated = await this.prisma.recipe.update({
       where: { id },
       data: { status: 'HIDDEN' as RecipeStatus },
       select: { title: true, status: true },
     });
+    // BR-NOTI: Báo cho tác giả khi bài bị ẩn (lỗi gửi không chặn ẩn)
+    await this.thongBao
+      .guiThongBao(recipe.authorId, 'Công thức đã bị ẩn', `Món "${recipe.title}" đã bị ẩn khỏi cộng đồng.`, {
+        loai: 'recipe_hidden',
+        congThucId: id,
+      })
+      .catch(() => undefined);
+    return updated;
   }
 }

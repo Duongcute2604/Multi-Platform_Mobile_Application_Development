@@ -110,6 +110,7 @@ model User {
   shoppingLists ShoppingList[]
   activities    UserActivity[]
   auditLogs     AuditLog[]
+  tokens        DeviceToken[]
 }
 
 model UserPreferences {
@@ -357,6 +358,17 @@ model Report {
   @@index([recipeId])
   @@index([recipeReferenceId])
   @@index([status])
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @db.VarChar(255)
+  platform  String   @default("unknown") @db.VarChar(20)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model MealPlan {
