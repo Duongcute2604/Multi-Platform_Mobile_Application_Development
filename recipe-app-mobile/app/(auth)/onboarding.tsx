@@ -70,7 +70,7 @@ export default function ManHinhBatDau() {
               <View className="h-28 w-28 items-center justify-center rounded-full bg-cream">
                 <Icon size={48} color="#0A2533" />
                 </View>
-                <TitleText className="mt-8 text-center text-2xl">{noiDung.tieuDe}</TitleText>
+                <TitleText kichThuoc="2xl" className="mt-8 text-center">{noiDung.tieuDe}</TitleText>
                 <BodyText className="mt-3 text-center text-neutral-500">{noiDung.moTa}</BodyText>
               </View>
             );

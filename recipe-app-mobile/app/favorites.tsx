@@ -18,7 +18,7 @@ export default function ManHinhYeuThich() {
         <Pressable accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => router.back()}>
           <ChevronLeft size={24} color="#1A1A2E" />
         </Pressable>
-        <TitleText className="text-xl">Công thức yêu thích</TitleText>
+        <TitleText kichThuoc="2xl">Công thức yêu thích</TitleText>
       </View>
       {isLoading ? (
         <TrangDangTai />

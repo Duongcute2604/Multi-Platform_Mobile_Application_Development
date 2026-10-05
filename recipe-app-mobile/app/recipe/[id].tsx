@@ -95,7 +95,7 @@ const KhoiDanhGia: FC<{ maCongThuc: string }> = ({ maCongThuc }) => {
 
   return (
     <View>
-      <TitleText className="mt-2 text-lg">Đánh giá</TitleText>
+      <TitleText kichThuoc="lg" className="mt-2">Đánh giá</TitleText>
       <View className="mt-2 flex-row items-center gap-3 rounded-2xl bg-mist p-3">
         <View className="items-center">
           <Text className="font-serif text-3xl font-black text-primary">
@@ -459,7 +459,7 @@ export default function ManHinhChiTietCongThuc() {
         </View>
 
         <View className="px-4 pt-4">
-          <TitleText className="text-3xl" soDongToiDa={3}>{data.title}</TitleText>
+          <TitleText kichThuoc="2xl" soDongToiDa={3}>{data.title}</TitleText>
           <View className="mt-3 flex-row items-center gap-3">
             <Avatar nguon={null} ten={data.author?.displayName ?? 'Ẩn danh'} kichThuoc={40} />
             <View className="flex-1">
@@ -509,7 +509,7 @@ export default function ManHinhChiTietCongThuc() {
         <View className="px-4">
           <KhoiDanhGia maCongThuc={maCongThuc} />
 
-          <TitleText className="mt-6 text-lg">Bình luận</TitleText>
+          <TitleText kichThuoc="lg" className="mt-6">Bình luận</TitleText>
           <View className="mt-2 flex-row gap-2">
             <View className="flex-1">
               <ONhapLieu giaTri={binhLuan} khiDoi={setBinhLuan} goiY="Viết bình luận..." />
@@ -537,7 +537,7 @@ export default function ManHinhChiTietCongThuc() {
 
           {(tuongTu.data?.length ?? 0) > 0 ? (
             <View className="mt-6">
-              <TitleText className="text-lg">Món tương tự</TitleText>
+              <TitleText kichThuoc="lg">Món tương tự</TitleText>
               <DanhSachCongThuc
                 duLieu={tuongTu.data ?? []}
                 dangTai={tuongTu.isLoading}

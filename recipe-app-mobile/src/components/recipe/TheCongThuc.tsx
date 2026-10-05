@@ -82,7 +82,7 @@ const TheCompact: FC<{ duLieu: DuLieuTheCongThuc; khiBam?: () => void }> = ({ du
       ) : null}
     </View>
     <View className="p-3">
-      <Text className="text-left font-serif text-[15px] font-bold text-primary" numberOfLines={2}>
+      <Text className="text-left font-serif text-base font-bold text-primary" numberOfLines={2}>
         {duLieu.tenMon}
       </Text>
       <View className="mt-2">
@@ -130,7 +130,7 @@ const TheGrid: FC<{ duLieu: DuLieuTheCongThuc; khiBam?: () => void }> = ({ duLie
       ) : null}
     </View>
     <View className="p-2.5">
-      <Text className="text-left font-serif text-sm font-bold text-primary" numberOfLines={2}>
+      <Text className="text-left font-serif text-base font-bold text-primary" numberOfLines={2}>
         {duLieu.tenMon}
       </Text>
       <View className="mt-1.5">

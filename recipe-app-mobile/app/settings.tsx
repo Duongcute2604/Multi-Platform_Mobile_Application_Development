@@ -21,7 +21,7 @@ export default function ManHinhCaiDat() {
           <Pressable accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => router.back()}>
             <ChevronLeft size={24} color="#1A1A2E" />
           </Pressable>
-          <TitleText className="text-xl">Cài đặt</TitleText>
+          <TitleText kichThuoc="2xl">Cài đặt</TitleText>
         </View>
 
         <View className="mt-4 rounded-3xl bg-white px-4 shadow-sm">

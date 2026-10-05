@@ -8,7 +8,7 @@ import { BottomSheet } from '../../src/components/ui/BottomSheet';
 import { Chip } from '../../src/components/ui/Chip';
 import { NutBam } from '../../src/components/ui/NutBam';
 import { ONhapLieu } from '../../src/components/ui/ONhapLieu';
-import { CaptionText } from '../../src/components/ui/VanBan';
+import { CaptionText, TitleText } from '../../src/components/ui/VanBan';
 import { NumberDisplay } from '../../src/components/ui/NumberDisplay';
 import { useDanhSachCongThuc } from '../../src/hooks/useRecipes';
 import type { ThamSoDanhSachCongThuc } from '../../src/lib/api/recipes';
@@ -142,9 +142,9 @@ export default function ManHinhTimKiem() {
         <CaptionText canLe="giua" className="font-bold uppercase tracking-widest text-deepteal">
           Kho tàng hương vị thuần Việt
         </CaptionText>
-        <Text className="mt-1 text-center font-serif text-3xl font-black text-primary">
+        <TitleText canLe="giua" kichThuoc="2xl" className="mt-1 font-black">
           Hôm nay gian bếp nấu món gì?
-        </Text>
+        </TitleText>
 
         <View className="mt-4 flex-row items-center gap-2">
           <View className="flex-1">

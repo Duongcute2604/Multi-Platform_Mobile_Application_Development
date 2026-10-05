@@ -163,7 +163,7 @@ function ChiTietKeHoach({ keHoachId, khiDong }: { keHoachId: string; khiDong: ()
           { nhan: 'Tổng món ăn', giaTri: <NumberDisplay value={data.cacMon.length} unit="món" /> },
           { nhan: 'Số ngày', giaTri: <NumberDisplay value={lichTuan.length} unit="ngày" /> },
           { nhan: 'Tổng khẩu phần', giaTri: <NumberDisplay value={tongKhauPhan} unit="phần" /> },
-          { nhan: 'Từ ngày', giaTri: <Text className="font-serif text-xl font-black text-primary">{dinhDangNgay(data.ngayBatDau).slice(0, 5)}</Text> },
+          { nhan: 'Từ ngày', giaTri: <TitleText className="font-black">{dinhDangNgay(data.ngayBatDau).slice(0, 5)}</TitleText> },
         ].map((s) => (
           <View key={s.nhan} className="min-w-[22%] flex-1 items-center rounded-3xl bg-white p-3 shadow-sm">
             <CaptionText canLe="giua" className="font-bold uppercase">{s.nhan}</CaptionText>
@@ -229,15 +229,15 @@ function ChiTietKeHoach({ keHoachId, khiDong }: { keHoachId: string; khiDong: ()
       />
       {taoDiCho.isError ? <CaptionText className="mt-1 text-red-500">Không tạo được danh sách đi chợ</CaptionText> : null}
 
-      <TitleText className="mt-6 text-xl">Lịch trình bữa ăn trong tuần</TitleText>
+      <TitleText kichThuoc="xl" className="mt-6">Lịch trình bữa ăn trong tuần</TitleText>
       {lichTuan.map((ngay) => {
         const coMon = ngay.cacBuoi.some((b) => b.mon.length > 0);
         return (
           <View key={ngay.ngay} className="mt-3 rounded-3xl bg-white p-4 shadow-sm">
             <CaptionText className="text-center">{dinhDangNgay(ngay.ngay)}</CaptionText>
-            <Text className="text-center font-serif text-lg font-black text-primary">
+            <TitleText canLe="giua" kichThuoc="lg" className="font-black">
               {tenThuTiengViet(ngay.ngay)}
-            </Text>
+            </TitleText>
             <View className="mt-2 gap-2">
               {coMon ? (
                 ngay.cacBuoi.map((buoi) =>
@@ -384,7 +384,7 @@ export default function ManHinhKeHoachAn() {
     <SafeAreaView className="flex-1 bg-mist">
       {!nguoiDung ? (
         <View className="flex-1 items-center justify-center px-6">
-          <TitleText canLe="giua" className="text-2xl">Kế hoạch của bạn</TitleText>
+          <TitleText canLe="giua" kichThuoc="2xl">Kế hoạch của bạn</TitleText>
           <CaptionText canLe="giua" className="mt-2">Đăng nhập để xem kế hoạch ăn của riêng bạn</CaptionText>
           <NutBam tieuDe="Đăng nhập" khiBam={() => router.push('/(auth)/login')} className="mt-4 px-8" />
         </View>
@@ -394,7 +394,7 @@ export default function ManHinhKeHoachAn() {
           Kế hoạch tuần & Đi chợ tự động
         </CaptionText>
         <View className="mt-1 flex-row items-center justify-between">
-          <TitleText className="flex-1 text-2xl">Kế hoạch dinh dưỡng tuần này</TitleText>
+          <TitleText className="flex-1" kichThuoc="2xl">Kế hoạch dinh dưỡng tuần này</TitleText>
           <NutBam tieuDe={dangTao ? 'Hủy' : '+ Mới'} bienThe="mo" khiBam={() => { setDangTao((v) => !v); setLoiTao(''); }} />
         </View>
 

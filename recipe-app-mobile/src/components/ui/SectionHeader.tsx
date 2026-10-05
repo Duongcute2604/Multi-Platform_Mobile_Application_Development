@@ -12,7 +12,7 @@ interface SectionHeaderProps {
 // BR-UI: Tiêu đề khu vực + nút "Xem tất cả" trên Home
 export const SectionHeader: FC<SectionHeaderProps> = ({ tieuDe, khiXemTatCa, className = '' }) => (
   <View className={`flex-row items-center justify-between ${className}`}>
-    <TitleText className="text-lg">{tieuDe}</TitleText>
+    <TitleText kichThuoc="lg">{tieuDe}</TitleText>
     {khiXemTatCa ? (
       <Pressable accessibilityRole="button" onPress={khiXemTatCa} className="flex-row items-center">
         <Text className="text-sm font-medium text-primary">Xem tất cả</Text>

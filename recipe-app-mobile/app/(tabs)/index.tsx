@@ -73,7 +73,7 @@ const ThePhoBien: FC<{ ct: CongThuc; khiBam: () => void; daThich: boolean; khiTh
         <HinhAnh ct={ct} />
       </View>
       <View className="p-3">
-        <Text className="text-left font-serif text-[15px] font-bold text-primary" numberOfLines={2}>
+        <Text className="text-left font-serif text-base font-bold text-primary" numberOfLines={2}>
           {ct.title}
         </Text>
         <View className="mt-2 flex-row items-center gap-3">
@@ -140,7 +140,7 @@ export default function ManHinhTrangChu() {
         <View className="flex-row items-center gap-3 px-4 pt-4">
           <Sun size={22} color={MAU_SAC.TEAL} />
           <View className="flex-1">
-            <TitleText className="text-xl">
+            <TitleText kichThuoc="2xl">
               {layLoiChao(new Date().getHours())}, {nguoiDung?.displayName ?? 'Bạn'}
             </TitleText>
             <CaptionText>Hôm nay nấu món gì ấm cúng cho gia đình?</CaptionText>
@@ -256,7 +256,7 @@ export default function ManHinhTrangChu() {
           </ScrollView>
         </View>
 
-        <View className="mt-6">
+        <View className="mt-5">
           <View className="flex-row items-center justify-between px-4">
             <SectionHeader tieuDe="Công thức phổ biến" khiXemTatCa={() => router.push('/(tabs)/search')} />
           </View>
@@ -281,7 +281,7 @@ export default function ManHinhTrangChu() {
         </View>
 
         {nguoiDung ? (
-          <View className="mt-6 px-4">
+          <View className="mt-5 px-4">
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push('/(tabs)/mealplan')}

@@ -168,7 +168,7 @@ export default function ManHinhTaoCongThuc() {
           <Pressable accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => router.back()} className="-ml-1 p-1">
             <ChevronLeft size={24} color="#1A1A2E" />
           </Pressable>
-          <TitleText className="text-2xl">{cheDoSua ? 'Sửa công thức' : 'Tạo công thức'}</TitleText>
+          <TitleText kichThuoc="2xl">{cheDoSua ? 'Sửa công thức' : 'Tạo công thức'}</TitleText>
         </View>
 
         <Controller

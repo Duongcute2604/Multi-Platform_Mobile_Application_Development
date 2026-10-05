@@ -33,7 +33,7 @@ export default function ManHinhCongThucCuaToi() {
         <Pressable accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => router.back()}>
           <ChevronLeft size={24} color="#1A1A2E" />
         </Pressable>
-        <TitleText className="text-xl">Công thức của tôi</TitleText>
+        <TitleText kichThuoc="2xl">Công thức của tôi</TitleText>
       </View>
 
       {isLoading ? (

@@ -69,7 +69,7 @@ export default function ManHinhKiemTraTuongTac() {
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
       >
-        <TitleText canLe="giua">Kiểm tra tương tác</TitleText>
+        <TitleText canLe="giua" kichThuoc="2xl">Kiểm tra tương tác</TitleText>
         <BodyText canLe="giua" className="mt-1 text-neutral-600">
           Nhập từng dòng một món để xem mức Kỵ/Độc, Hợp hay Trung tính.
         </BodyText>

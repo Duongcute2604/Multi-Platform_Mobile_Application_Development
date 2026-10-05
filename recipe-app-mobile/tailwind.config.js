@@ -32,9 +32,16 @@ module.exports = {
         danger: '#C62828',
         info: '#1976D2',
       },
-      // BR-UI: Serif editorial (Georgia/iOS, serif/Android) cho tiêu đề giống web
+      // BR-UI: Serif editorial cho tiêu đề giống web.
+      //
+      // KHÔNG để Georgia ở đầu stack: trên Windows font này có glyph tiếng Việt
+      // nhưng THIẾU mark-positioning -> dấu bị tách khỏi chữ
+      // (phổ biến in ra "phổ biê´n", bếp in ra "bê´p"). Đã test trực tiếp cùng
+      // một chuỗi: Times New Roman/Arial render chuẩn, Georgia lỗi.
+      // Times New Roman có đủ glyph + GPOS, có sẵn trên Windows/macOS/iOS;
+      // Android/Linux không có thì rơi về serif (Noto Serif) cũng đủ dấu.
       fontFamily: {
-        serif: ['Georgia', 'serif'],
+        serif: ['"Times New Roman"', 'Georgia', 'ui-serif', 'serif'],
       },
     },
   },

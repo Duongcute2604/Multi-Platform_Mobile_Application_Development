@@ -100,7 +100,7 @@ function ChiTietDiCho({ id }: { id: string }) {
     <View>
       <View className="mt-4 rounded-3xl bg-white p-4 shadow-sm">
         <View className="flex-row items-center justify-between">
-          <Text className="font-serif text-xl font-bold text-primary">{data.ten}</Text>
+          <TitleText>{data.ten}</TitleText>
           <CaptionText>
             Đã mua <NumberDisplay value={soDaMua} />/<NumberDisplay value={data.cacMon.length} /> món ({tyLe}%)
           </CaptionText>
@@ -226,7 +226,7 @@ export default function ManHinhDiCho() {
     <SafeAreaView className="flex-1 bg-mist">
       {!nguoiDung ? (
         <View className="flex-1 items-center justify-center px-6">
-          <TitleText canLe="giua" className="text-2xl">Danh sách đi chợ</TitleText>
+          <TitleText canLe="giua" kichThuoc="2xl">Danh sách đi chợ</TitleText>
           <CaptionText canLe="giua" className="mt-2">Đăng nhập để xem danh sách đi chợ của riêng bạn</CaptionText>
           <NutBam tieuDe="Đăng nhập" khiBam={() => router.push('/(auth)/login')} className="mt-4 px-8" />
         </View>
@@ -236,7 +236,7 @@ export default function ManHinhDiCho() {
           Tiện ích gian bếp gia đình
         </CaptionText>
         <View className="mt-1 flex-row items-center justify-between">
-          <TitleText className="flex-1 text-2xl">Danh Sách Đi Chợ Gia Đình</TitleText>
+          <TitleText className="flex-1" kichThuoc="2xl">Danh Sách Đi Chợ Gia Đình</TitleText>
           <NutBam tieuDe={dangTao ? 'Hủy' : '+ Mới'} bienThe="mo" khiBam={() => { setDangTao((v) => !v); setLoiTao(''); }} />
         </View>
 
