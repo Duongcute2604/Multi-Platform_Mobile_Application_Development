@@ -27,10 +27,10 @@ beforeEach(() => {
 });
 
 describe('Sidebar', () => {
-  it('render du 9 muc dieu huong', () => {
+  it('render du 11 muc dieu huong', () => {
     renderWithProviders(<Sidebar />, { route: '/' });
     const links = screen.getAllByRole('link');
-    expect(NAV_ITEMS).toHaveLength(9);
+    expect(NAV_ITEMS).toHaveLength(11);
     expect(links).toHaveLength(NAV_ITEMS.length);
     expect(screen.getByRole('link', { name: /Trang chủ/ })).toHaveAttribute('href', '/');
     expect(screen.getByRole('link', { name: /Người dùng/ })).toHaveAttribute('href', '/users');

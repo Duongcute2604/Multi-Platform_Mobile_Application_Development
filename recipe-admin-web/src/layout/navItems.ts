@@ -19,5 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/references', label: 'References', icon: '🌐' },
   { to: '/categories', label: 'Danh mục', icon: '📁' },
   { to: '/tags', label: 'Nhãn (Tag)', icon: '🏷️' },
+  { to: '/meal-plans', label: 'Kế hoạch ăn', icon: '📅' },
+  { to: '/shopping-lists', label: 'Danh sách đi chợ', icon: '🛒' },
   { to: '/users', label: 'Người dùng', icon: '👥' },
 ];
