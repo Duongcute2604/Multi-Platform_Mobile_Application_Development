@@ -32,6 +32,10 @@ export class RecipesService {
       rejectionReason: true,
       createdAt: true,
       updatedAt: true,
+      // Card công thức trên Home có hiện Kcal (icon Flame). Không select phần này
+      // thì `ct.nutrition` luôn undefined và mọi thẻ hiện "— Kcal" dù seed đã đủ
+      // dinh dưỡng. Chọn đúng 4 field zod `dinhDuongSchema` yêu cầu.
+      nutrition: { select: { calories: true, protein: true, carbs: true, fat: true } },
     };
     // Spec recipes/README.md "GET /recipes (List - KHÔNG CÓ ID)": danh sách công khai
     // cố tình KHÔNG trả id để chống dò/enum UUID sang endpoint chi tiết.
