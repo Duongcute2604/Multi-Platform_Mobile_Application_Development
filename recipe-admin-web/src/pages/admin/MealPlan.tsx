@@ -7,16 +7,24 @@ import {
   taoKeHoachAn,
   capNhatKeHoachAn,
   xoaKeHoachAn,
+  themMonVaoKeHoach,
+  capNhatMonTrongKeHoach,
+  xoaMonKhoiKeHoach,
 } from '../../api/admin';
 
 export default function MealPlan() {
   const [trang, setTrang] = useState(0);
   const [moModalThem, setMoModalThem] = useState(false);
   const [moModalSua, setMoModalSua] = useState<{ id: string; ten: string; ngayBatDau: string; ngayKetThuc: string } | null>(null);
+  const [xemMon, setXemMon] = useState<{ id: string; ten: string } | null>(null);
+  const [moModalMon, setMoModalMon] = useState<{ keHoachId: string; item?: { id: string; ngay: string; loaiBuoiAn: string; khauPhan: number } } | null>(null);
 
   const [formTen, setFormTen] = useState('');
   const [formNgayBatDau, setFormNgayBatDau] = useState('');
   const [formNgayKetThuc, setFormNgayKetThuc] = useState('');
+  const [formNgay, setFormNgay] = useState('');
+  const [formBuoiAn, setFormBuoiAn] = useState('LUNCH');
+  const [formKhauPhan, setFormKhauPhan] = useState(2);
 
   const queryClient = useQueryClient();
 
@@ -53,6 +61,35 @@ export default function MealPlan() {
     },
   });
 
+  const themMon = useMutation({
+    mutationFn: ({ keHoachId, dto }: { keHoachId: string; dto: { ngay: string; buoiAn: string; khauPhan: number } }) =>
+      themMonVaoKeHoach(keHoachId, dto),
+    onSuccess: () => {
+      setMoModalMon(null);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'meal-plans'] });
+    },
+  });
+
+  const suaMon = useMutation({
+    mutationFn: ({ keHoachId, monId, dto }: { keHoachId: string; monId: string; dto: { khauPhan?: number; ngay?: string; buoiAn?: string } }) =>
+      capNhatMonTrongKeHoach(keHoachId, monId, dto),
+    onSuccess: () => {
+      setMoModalMon(null);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'meal-plans'] });
+    },
+  });
+
+  const xoaMonMua = useMutation({
+    mutationFn: ({ keHoachId, monId }: { keHoachId: string; monId: string }) =>
+      xoaMonKhoiKeHoach(keHoachId, monId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'meal-plans'] });
+    },
+  });
+
+  const tenBuoi = (m: string) =>
+    m === 'BREAKFAST' ? 'Sáng' : m === 'LUNCH' ? 'Trưa' : m === 'DINNER' ? 'Tối' : 'Phụ';
+
   const moSua = (item: { id: string; ten: string; ngayBatDau: string; ngayKetThuc: string }) => {
     setFormTen(item.ten);
     setFormNgayBatDau(item.ngayBatDau.split('T')[0]);
@@ -76,6 +113,38 @@ export default function MealPlan() {
         ngayKetThuc: formNgayKetThuc || undefined,
       },
     });
+  };
+
+  const moThemMon = (keHoachId: string, item?: { id: string; ngay: string; loaiBuoiAn: string; khauPhan: number }) => {
+    setFormNgay(item ? item.ngay.split('T')[0] : '');
+    setFormBuoiAn(item ? item.loaiBuoiAn : 'LUNCH');
+    setFormKhauPhan(item ? item.khauPhan : 2);
+    setMoModalMon({ keHoachId, item });
+  };
+
+  const submitThemMon = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!moModalMon) return;
+    themMon.mutate({
+      keHoachId: moModalMon.keHoachId,
+      dto: { ngay: formNgay, buoiAn: formBuoiAn, khauPhan: formKhauPhan },
+    });
+  };
+
+  const submitSuaMon = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!moModalMon?.item) return;
+    suaMon.mutate({
+      keHoachId: moModalMon.keHoachId,
+      monId: moModalMon.item.id,
+      dto: { khauPhan: formKhauPhan, ngay: formNgay || undefined, buoiAn: formBuoiAn },
+    });
+  };
+
+  const handleXoaMon = (keHoachId: string, monId: string) => {
+    if (window.confirm('Xóa món này khỏi kế hoạch?')) {
+      xoaMonMua.mutate({ keHoachId, monId });
+    }
   };
 
   if (isLoading) return <p className="p-4">Đang tải...</p>;
@@ -149,6 +218,13 @@ export default function MealPlan() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setXemMon(xemMon?.id === kh.id ? null : { id: kh.id, ten: kh.ten })}
+                    className="rounded bg-green-600 px-3 py-1.5 text-sm font-semibold text-white"
+                  >
+                    Món
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       if (window.confirm('Xóa kế hoạch này? Không thể hoàn tác!')) {
                         xoaMua.mutate(kh.id);
@@ -186,6 +262,140 @@ export default function MealPlan() {
           Sau
         </button>
       </div>
+
+      {xemMon && (() => {
+        const kh = data.content.find((p: any) => p.id === xemMon.id);
+        const cacMon: any[] = kh?.cacMon ?? [];
+        return (
+          <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold">Món trong kế hoạch: {xemMon.ten}</h2>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => moThemMon(xemMon.id)}
+                  className="rounded bg-green-600 px-3 py-1.5 text-sm font-semibold text-white"
+                >
+                  + Thêm món
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setXemMon(null)}
+                  className="rounded border px-3 py-1.5 text-sm"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+            {cacMon.length === 0 ? (
+              <p className="mt-3 text-sm text-neutral-500">Chưa có món nào trong kế hoạch này.</p>
+            ) : (
+              <table className="mt-3 w-full border-collapse bg-white">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border p-2 text-left">STT</th>
+                    <th className="border p-2 text-left">Món</th>
+                    <th className="border p-2 text-left">Ngày</th>
+                    <th className="border p-2 text-left">Buổi</th>
+                    <th className="border p-2 text-left">Khẩu phần</th>
+                    <th className="border p-2 text-left">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cacMon.map((mon: any, i: number) => (
+                    <tr key={mon.id} className="border-t">
+                      <td className="number-vn border p-2">{i + 1}</td>
+                      <td className="border p-2 text-left font-medium">{mon.congThuc?.ten ?? 'Món đã xóa'}</td>
+                      <td className="border p-2 text-left">{format(new Date(mon.ngay), 'dd/MM/yyyy')}</td>
+                      <td className="border p-2 text-left">{tenBuoi(mon.loaiBuoiAn)}</td>
+                      <td className="border p-2 text-left">{formatVn(mon.khauPhan)} người</td>
+                      <td className="border p-2">
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => moThemMon(xemMon.id, { id: mon.id, ngay: mon.ngay, loaiBuoiAn: mon.loaiBuoiAn, khauPhan: mon.khauPhan })}
+                            className="rounded bg-ink px-3 py-1.5 text-sm font-semibold text-white"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleXoaMon(xemMon.id, mon.id)}
+                            className="rounded border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-600"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        );
+      })()}
+
+      {moModalMon && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+            <h2 className="text-xl font-bold mb-4">{moModalMon.item ? 'Sửa món' : 'Thêm món vào kế hoạch'}</h2>
+            <form onSubmit={moModalMon.item ? submitSuaMon : submitThemMon} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Ngày *</label>
+                <input
+                  type="date"
+                  value={formNgay}
+                  onChange={(e) => setFormNgay(e.target.value)}
+                  required
+                  className="w-full mt-1 rounded-xl border px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Buổi ăn *</label>
+                <select
+                  value={formBuoiAn}
+                  onChange={(e) => setFormBuoiAn(e.target.value)}
+                  className="w-full mt-1 rounded-xl border px-3 py-2 text-sm"
+                >
+                  <option value="BREAKFAST">Sáng</option>
+                  <option value="LUNCH">Trưa</option>
+                  <option value="DINNER">Tối</option>
+                  <option value="SNACK">Phụ</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Khẩu phần *</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formKhauPhan}
+                  onChange={(e) => setFormKhauPhan(Number(e.target.value))}
+                  required
+                  className="w-full mt-1 rounded-xl border px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="flex gap-2 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setMoModalMon(null)}
+                  className="flex-1 rounded border px-4 py-2"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={!formNgay.trim()}
+                  className="flex-1 rounded bg-ink px-4 py-2 text-white"
+                >
+                  {moModalMon.item ? 'Lưu' : 'Thêm'}
+                </button>
+              </div>
+            </form>
+          </div>
+          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setMoModalMon(null)} />
+        </div>
+      )}
 
       {moModalThem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
