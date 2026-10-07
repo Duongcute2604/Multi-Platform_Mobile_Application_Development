@@ -62,3 +62,12 @@ export async function quenMatKhau(email: string): Promise<string> {
   );
   return duLieu.message;
 }
+
+/** Task 3.2: Đổi mật khẩu — đúng ChangePasswordDto của backend. */
+export async function doiMatKhau(currentPassword: string, newPassword: string): Promise<void> {
+  await goiApi(
+    apiClient
+      .post('auth/change-password', { json: { currentPassword, newPassword } })
+      .json<ApiResponse<null>>(),
+  );
+}

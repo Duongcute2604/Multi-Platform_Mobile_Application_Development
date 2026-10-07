@@ -5,7 +5,7 @@
  * request bị ValidationPipe chặn với `forbidNonWhitelisted`. Test ở đây khoá
  * lại đúng tên field backend nhận — đổi tên là test đỏ.
  */
-import { dangNhap, dangKy, layThongTinNguoiDung, quenMatKhau } from '../auth';
+import { dangNhap, dangKy, doiMatKhau, layThongTinNguoiDung, quenMatKhau } from '../auth';
 
 jest.mock('../../auth/tokenManager', () => ({
   layAccessToken: jest.fn(async () => 'token'),
@@ -95,5 +95,17 @@ describe('quenMatKhau', () => {
     expect(bodyDaGui).toEqual({ email: 'demo@cookbook.vn' });
     expect(urlDaGui).toContain('auth/forgot-password');
     expect(ketQua).toContain('đăng ký');
+  });
+});
+
+describe('doiMatKhau - Task 3.2', () => {
+  it('POST auth/change-password voi body { currentPassword, newPassword }', async () => {
+    mockJson({ success: true, data: null, error: null });
+
+    await doiMatKhau('MatKhauCu123', 'MatKhauMoi123');
+
+    expect(bodyDaGui).toEqual({ currentPassword: 'MatKhauCu123', newPassword: 'MatKhauMoi123' });
+    expect(methodDaGui).toBe('POST');
+    expect(urlDaGui).toContain('auth/change-password');
   });
 });

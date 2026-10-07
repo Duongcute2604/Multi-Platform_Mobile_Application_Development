@@ -1,7 +1,7 @@
 ﻿import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, ChevronLeft, Moon, Palette, CalendarDays } from 'lucide-react-native';
+import { Bell, ChevronLeft, ChevronRight, KeyRound, Moon, Palette, CalendarDays } from 'lucide-react-native';
 import { OChuyenDoi } from '../src/components/ui/OChuyenDoi';
 import { BodyText, CaptionText, TitleText } from '../src/components/ui/VanBan';
 import { useUiStore } from '../src/stores/uiStore';
@@ -123,6 +123,20 @@ export default function ManHinhCaiDat() {
             giaTri={thongBaoNacDiCho}
             khiDoi={datThongBaoNacDiCho}
           />
+        </View>
+
+        <View className="mt-4 rounded-3xl bg-white px-4 shadow-sm">
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/change-password')}
+            className="flex-row items-center gap-3 py-4"
+          >
+            <View className="h-9 w-9 items-center justify-center rounded-xl bg-accent-light">
+              <KeyRound size={18} color="#0A2533" />
+            </View>
+            <BodyText className="flex-1">Đổi mật khẩu</BodyText>
+            <ChevronRight size={20} color="#97A2B0" />
+          </Pressable>
         </View>
 
         <View className="mt-4 rounded-3xl bg-white px-4 shadow-sm">

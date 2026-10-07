@@ -1,6 +1,7 @@
 import {
   dangKySchema,
   dangNhapSchema,
+  doiMatKhauSchema,
   taoCongThucSchema,
   taoKeHoachAnSchema,
 } from '../schemas';
@@ -72,6 +73,29 @@ describe('validation schemas', () => {
           ngayKetThuc: '2026-09-07',
         }).success,
       ).toBe(true);
+    });
+  });
+
+  describe('doiMatKhauSchema', () => {
+    const hopLe = {
+      matKhauHienTai: 'MatKhauCu123',
+      matKhauMoi: 'MatKhauMoi123',
+      xacNhanMatKhau: 'MatKhauMoi123',
+    };
+
+    it('chấp nhận khi mật khẩu mới khớp xác nhận và đủ độ mạnh', () => {
+      expect(doiMatKhauSchema.safeParse(hopLe).success).toBe(true);
+    });
+
+    it('từ chối khi xác nhận không khớp', () => {
+      const kq = doiMatKhauSchema.safeParse({ ...hopLe, xacNhanMatKhau: 'KhacMatKhau123' });
+      expect(kq.success).toBe(false);
+      if (!kq.success) expect(kq.error.issues[0]?.path.join('.')).toContain('xacNhanMatKhau');
+    });
+
+    it('từ chối mật khẩu mới yếu (thiếu hoa/thường/số hoặc quá ngắn)', () => {
+      expect(doiMatKhauSchema.safeParse({ ...hopLe, matKhauMoi: 'matkhau123' }).success).toBe(false);
+      expect(doiMatKhauSchema.safeParse({ ...hopLe, matKhauMoi: 'abc' }).success).toBe(false);
     });
   });
 });

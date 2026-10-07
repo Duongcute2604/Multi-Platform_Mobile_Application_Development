@@ -23,6 +23,24 @@ export const dangKySchema = z.object({
 
 export type DangKyForm = z.infer<typeof dangKySchema>;
 
+// BR-AUTH: Khớp ChangePasswordDto backend (>= 8 ký tự + hoa/thường/số)
+export const doiMatKhauSchema = z
+  .object({
+    matKhauHienTai: z.string().min(1, 'AUTH-00 Nhập mật khẩu hiện tại'),
+    matKhauMoi: z
+      .string()
+      .min(8, 'AUTH-05 Mật khẩu tối thiểu 8 ký tự')
+      .max(72)
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, 'AUTH-05 Mật khẩu phải có chữ hoa, chữ thường và số'),
+    xacNhanMatKhau: z.string().min(1, 'AUTH-00 Nhập lại mật khẩu mới'),
+  })
+  .refine((duLieu) => duLieu.matKhauMoi === duLieu.xacNhanMatKhau, {
+    message: 'AUTH-00 Mật khẩu xác nhận không khớp',
+    path: ['xacNhanMatKhau'],
+  });
+
+export type DoiMatKhauForm = z.infer<typeof doiMatKhauSchema>;
+
 // BR-UREC: Khớp TaoCongThucDto backend
 export const nguyenLieuMoiSchema = z.object({
   ten: z.string().min(1, 'REC-00 Tên nguyên liệu không được trống').max(200),
