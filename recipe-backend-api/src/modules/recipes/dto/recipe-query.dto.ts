@@ -36,7 +36,7 @@ export class RecipeQueryDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['createdAt', 'title', 'updatedAt'], { message: '[REC-05] Trường sort không hợp lệ' })
+  @IsIn(['createdAt', 'title', 'updatedAt', 'rating', 'popular'], { message: '[REC-05] Trường sort không hợp lệ' })
   sortBy: string = 'createdAt';
 
   @IsOptional()

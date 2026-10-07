@@ -47,6 +47,19 @@ export class RecipesService {
     return select;
   }
 
+  private buildOrderBy(sortBy: string, sortDirection: 'asc' | 'desc'): Prisma.RecipeOrderByWithRelationInput | Prisma.RecipeOrderByWithRelationInput[] {
+    if (sortBy === 'rating') {
+      // NOTE: Prisma relation orderBy chỉ hỗ trợ `_count` — không có `_avg`.
+      // sortBy=rating được xử lý riêng trong findAllTopRatings (xem dưới).
+      return { createdAt: sortDirection };
+    }
+    if (sortBy === 'popular') {
+      // Món phổ biến: nhiều lượt yêu thích trước, hòa thì nhiều bình luận trước.
+      return [{ favorites: { _count: sortDirection } }, { comments: { _count: sortDirection } }];
+    }
+    return { [sortBy]: sortDirection };
+  }
+
   async findAll(query: RecipeQueryDto, viewerRole?: string) {
     const page = query.page ?? 0;
     const size = query.size ?? 20;
@@ -74,16 +87,18 @@ export class RecipesService {
       where.tags = { some: { name: { in: query.tagNames } } };
     }
 
-    const [content, total] = await Promise.all([
-      this.prisma.recipe.findMany({
-        where,
-        skip: page * size,
-        take: size,
-        orderBy: { [query.sortBy]: query.sortDirection },
-        select: this.listSelect(viewerRole),
-      }),
-      this.prisma.recipe.count({ where }),
-    ]);
+    const total = await this.prisma.recipe.count({ where });
+
+    const content =
+      query.sortBy === 'rating'
+        ? await this.findAllTopRatings(where, query.sortDirection, page, size, viewerRole)
+        : await this.prisma.recipe.findMany({
+            where,
+            skip: page * size,
+            take: size,
+            orderBy: this.buildOrderBy(query.sortBy, query.sortDirection),
+            select: this.listSelect(viewerRole),
+          });
 
     return {
       content,
@@ -91,6 +106,60 @@ export class RecipesService {
       totalElements: total,
       totalPages: Math.ceil(total / size),
     };
+  }
+
+  /**
+   * Món nổi bật theo điểm trung bình (sortBy=rating).
+   * Prisma không sort theo `_avg` của relation nên fetch id + score rồi tính
+   * thứ hạng ở tầng ứng dụng. Món chưa có lượt đánh giá luôn xếp cuối.
+   * Phân trang áp trên danh sách ĐÃ SORT nên không lệch trang.
+   */
+  private async findAllTopRatings(
+    where: Prisma.RecipeWhereInput,
+    sortDirection: 'asc' | 'desc',
+    page: number,
+    size: number,
+    viewerRole: string | undefined,
+  ) {
+    const candidates = await this.prisma.recipe.findMany({
+      where,
+      select: {
+        id: true,
+        createdAt: true,
+        ratings: { select: { score: true } },
+      },
+    });
+
+    const ranked = candidates
+      .map((r) => ({
+        id: r.id,
+        avg: r.ratings.length ? r.ratings.reduce((s, x) => s + x.score, 0) / r.ratings.length : -1,
+        createdAt: r.createdAt.getTime(),
+      }))
+      .sort((a, b) => {
+        if (sortDirection === 'asc') return a.avg - b.avg || a.createdAt - b.createdAt;
+        return b.avg - a.avg || b.createdAt - a.createdAt;
+      });
+
+    const pageIds = ranked.slice(page * size, page * size + size).map((r) => r.id);
+    if (pageIds.length === 0) return [];
+
+    // Lấy đủ field hiển thị + id tạm để sắp lại đúng thứ tự đã xếp hạng.
+    const rows = await this.prisma.recipe.findMany({
+      where: { id: { in: pageIds } },
+      select: { ...this.listSelect(viewerRole), id: true },
+    });
+    const theoId = new Map(rows.map((r) => [r.id, r]));
+    // Quá nhiều dòng xếp hạng hơn trang không xảy ra; dòng thừa chỉ là bảo vệ:
+    const trang = pageIds
+      .map((id) => theoId.get(id))
+      .filter((r): r is NonNullable<typeof r> => Boolean(r)) as Array<(typeof rows)[number]>;
+
+    // Không trả id cho viewer không phải ADMIN (khớp listSelect)
+    if (viewerRole !== Role.ADMIN) {
+      return trang.map(({ id: _id, ...rest }) => rest);
+    }
+    return trang;
   }
 
   async findOne(id: string, viewer?: { id?: string; role?: string }) {
