@@ -7,10 +7,13 @@
  * - co MOT noi duy nhat biet backend chap nhan tham so gi va quy tac gi,
  *   thay vi moi page tu doi lai mot lan.
  *
- * Backend: `RecipeQueryDto` (modules/recipes/dto/recipe-query.dto.ts) - chi nhan
+ * Backend: `RecipeQueryDto` (modules/recipes/dto/recipe-query.dto.ts) - nhan
  * `page`, `size` (1..50), `search`, `status`, `categoryId`, `tagNames`,
- * `sortBy` (createdAt|title|updatedAt), `sortDirection` (asc|desc). Gui tham so
- * ngoai danh sach nay se bi `[REC-05]` tra ve 400.
+ * `sortBy` (createdAt|title|updatedAt|rating|popular), `sortDirection`
+ * (asc|desc), `minCookTime`/`maxCookTime` (phút, max >= min), `servings` (>=1).
+ * Gui tham so ngoai danh sach nay se bi `[REC-05]` tra ve 400. Web admin chi
+ * dung sort createdAt/title/updatedAt; `rating`/`popular` phuc vu Home mang di
+ * dong va backend filter hai truong do kem validate min <= max.
  */
 import { apiClient } from '../../api/client';
 import { resolveStatus } from '../../components/ui/statusMeta';
