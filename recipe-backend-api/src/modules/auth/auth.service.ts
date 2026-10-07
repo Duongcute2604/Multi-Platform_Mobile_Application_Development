@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
@@ -7,6 +7,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import {
   AuthTokens,
   AuthUserResponse,
@@ -128,6 +129,29 @@ export class AuthService {
       throw new UnauthorizedException('[AUTH-13] Tài khoản không tồn tại');
     }
     return this.toUserResponse(user);
+  }
+
+  /**
+   * Task 2.5: PATCH /auth/me — sửa hồ sơ cá nhân (displayName/avatarUrl).
+   * Chỉ cập nhật field được gửi; không bao giờ chạm passwordHash. Cần ít nhất
+   * 1 field, nếu không là [AUTH-16] (không cho update rỗng tranh chấp payload).
+   */
+  async capNhatHoSo(userId: string, dto: UpdateProfileDto) {
+    if (dto.displayName === undefined && dto.avatarUrl === undefined) {
+      throw new BadRequestException('[AUTH-16] Cần ít nhất một trường để cập nhật (displayName hoặc avatarUrl)');
+    }
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('[AUTH-13] Tài khoản không tồn tại');
+    }
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(dto.displayName !== undefined ? { displayName: dto.displayName } : {}),
+        ...(dto.avatarUrl !== undefined ? { avatarUrl: dto.avatarUrl } : {}),
+      },
+      select: { email: true, displayName: true, avatarUrl: true, role: true, status: true },
+    });
   }
 
   private async signTokens(

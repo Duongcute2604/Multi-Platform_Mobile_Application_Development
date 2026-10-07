@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Patch, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 
@@ -51,6 +52,15 @@ export class AuthController {
   @ApiOperation({ summary: 'Lấy thông tin user hiện tại' })
   me(@CurrentUser() user: { id: string }) {
     return this.authService.me(user.id);
+  }
+
+  @Patch('me')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: 'Cập nhật hồ sơ cá nhân (displayName/avatarUrl)' })
+  capNhatHoSo(@CurrentUser() user: { id: string }, @Body() dto: UpdateProfileDto) {
+    return this.authService.capNhatHoSo(user.id, dto);
   }
 
   /**
