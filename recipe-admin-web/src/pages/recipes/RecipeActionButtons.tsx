@@ -21,6 +21,7 @@ export function RecipeActionButtons({
   onApprove,
   onReject,
   onHide,
+  onRestore,
   busyKind,
   showView = true,
 }: {
@@ -29,6 +30,7 @@ export function RecipeActionButtons({
   onApprove: (recipe: ModerationTarget) => void;
   onReject: (recipe: ModerationTarget) => void;
   onHide: (recipe: ModerationTarget) => void;
+  onRestore: (recipe: ModerationTarget) => void;
   /** Thao tac dang chay o dau do, de vo hieu hoa dung nut do. */
   busyKind?: ModerationAction | null;
   /** An nut "Xem" khi dang o trong hop thoai chi tiet (nut vo nghia). */
@@ -39,6 +41,7 @@ export function RecipeActionButtons({
   function run(kind: ModerationAction) {
     if (kind === 'approve') onApprove(recipe);
     else if (kind === 'reject') onReject(recipe);
+    else if (kind === 'restore') onRestore(recipe);
     else onHide(recipe);
   }
 
@@ -64,9 +67,16 @@ export function RecipeActionButtons({
             kind === 'approve' && 'bg-green-600 text-white border-green-600 hover:bg-green-700',
             kind === 'reject' && 'bg-red-600 text-white border-red-600 hover:bg-red-700',
             kind === 'hide' && 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
+            kind === 'restore' && 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700',
           )}
         >
-          {kind === 'approve' ? 'Duyệt' : kind === 'reject' ? 'Từ chối' : 'Ẩn'}
+          {kind === 'approve'
+            ? 'Duyệt'
+            : kind === 'reject'
+              ? 'Từ chối'
+              : kind === 'restore'
+                ? 'Khôi phục'
+                : 'Ẩn'}
         </button>
       ))}
 

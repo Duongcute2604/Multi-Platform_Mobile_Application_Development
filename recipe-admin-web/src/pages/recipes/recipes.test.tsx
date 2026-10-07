@@ -139,10 +139,11 @@ describe('recipeQuery - quy tac BR-02', () => {
     expect(allowedActions('REJECTED')).toEqual(['hide']);
   });
 
-  it('DRAFT va HIDDEN khong co thao tac duyet nao', () => {
-    // `HIDDEN` rong la do backend CHUA CO endpoint `unhide` - xem DEFER-06.
+  it('DRAFT khong co thao tac nao; HIDDEN chi co Khoi phuc (backend da them restore)', () => {
+    // Task 2.1 ben backend da them `PATCH /admin/recipes/:id/restore` — truoc
+    // day HIDDEN rong la do endpoint chua ton tai (DEFER-06 da het hieu luc).
     expect(allowedActions('DRAFT')).toEqual([]);
-    expect(allowedActions('HIDDEN')).toEqual([]);
+    expect(allowedActions('HIDDEN')).toEqual(['restore']);
   });
 
   it('khong doan trang thai la: rong / null / rac deu khong cho phep gi', () => {
@@ -258,6 +259,7 @@ describe('RecipeActionButtons', () => {
         onApprove={noop}
         onReject={noop}
         onHide={noop}
+        onRestore={noop}
       />,
     );
     expect(screen.getByRole('button', { name: 'Xem' })).toBeInTheDocument();
@@ -274,6 +276,7 @@ describe('RecipeActionButtons', () => {
         onApprove={noop}
         onReject={noop}
         onHide={noop}
+        onRestore={noop}
       />,
     );
     expect(screen.getByRole('button', { name: 'Ẩn' })).toBeInTheDocument();
@@ -289,10 +292,29 @@ describe('RecipeActionButtons', () => {
         onApprove={noop}
         onReject={noop}
         onHide={noop}
+        onRestore={noop}
       />,
     );
     expect(screen.getByRole('button', { name: 'Xem' })).toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('HIDDEN: chi co Xem va Khoi phuc (nut restore sau Task 2.1)', () => {
+    renderWithProviders(
+      <RecipeActionButtons
+        recipe={{ id: 'r-1', title: 'Phở bò', status: 'HIDDEN' }}
+        onView={noop}
+        onApprove={noop}
+        onReject={noop}
+        onHide={noop}
+        onRestore={noop}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Xem' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Khôi phục' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ẩn' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Duyệt' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Từ chối' })).not.toBeInTheDocument();
   });
 
   it('an nut Xem khi dang o trong hop thoai chi tiet', () => {
@@ -303,6 +325,7 @@ describe('RecipeActionButtons', () => {
         onApprove={noop}
         onReject={noop}
         onHide={noop}
+        onRestore={noop}
         showView={false}
       />,
     );
@@ -317,6 +340,7 @@ describe('RecipeActionButtons', () => {
         onApprove={noop}
         onReject={noop}
         onHide={noop}
+        onRestore={noop}
         busyKind="approve"
       />,
     );
@@ -614,7 +638,7 @@ describe('AllRecipesPage', () => {
     await waitFor(() => expect(patch).toHaveBeenCalledWith('/admin/recipes/r-1/hide'));
   });
 
-  it('HIDDEN khong co nut khoi phuc vi backend chua co endpoint', async () => {
+  it('HIDDEN: co nut Khoi phuc, xac nhan truoc roi moi goi PATCH restore', async () => {
     serveList([summary({ status: 'HIDDEN' })]);
     renderWithProviders(<AllRecipesPage />);
     // Cho vao bang chu khong cho vao badge trong dong - "Đã ẩn" cung la ten
@@ -623,10 +647,16 @@ describe('AllRecipesPage', () => {
 
     const row = bodyRows()[0];
     expect(within(row).getByText('Đã ẩn')).toBeInTheDocument();
-    expect(within(row).getByRole('button', { name: 'Xem' })).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Khôi phục' })).toBeInTheDocument();
     expect(within(row).queryByRole('button', { name: 'Ẩn' })).not.toBeInTheDocument();
     expect(within(row).queryByRole('button', { name: 'Duyệt' })).not.toBeInTheDocument();
     expect(within(row).queryByRole('button', { name: 'Từ chối' })).not.toBeInTheDocument();
+
+    fireEvent.click(within(row).getByRole('button', { name: 'Khôi phục' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Khôi phục công thức' });
+    expect(patch).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Khôi phục' }));
+    await waitFor(() => expect(patch).toHaveBeenCalledWith('/admin/recipes/r-1/restore'));
   });
 
   it('tim khong ra gi thi thong bao rong khac voi bang rong', async () => {

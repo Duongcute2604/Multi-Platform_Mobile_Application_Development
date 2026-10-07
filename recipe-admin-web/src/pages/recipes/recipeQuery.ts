@@ -173,7 +173,7 @@ export function buildRecipeListParams(query: RecipeListQuery = {}): URLSearchPar
 
 // --- Quy tac BR-02: thao tac nao hop le o trang thai nao -----------------------
 
-export type ModerationAction = 'approve' | 'reject' | 'hide';
+export type ModerationAction = 'approve' | 'reject' | 'hide' | 'restore';
 
 /**
  * Cac thao tac backend cho phep theo trang thai hien tai.
@@ -182,9 +182,9 @@ export type ModerationAction = 'approve' | 'reject' | 'hide';
  * nut cham vo toi API 409:
  * - `approve` / `reject`: chi PENDING, sai thi `[ADM-05]`
  * - `hide`: chi APPROVED hoac REJECTED, sai thi `[ADM-06]`
- *
- * `HIDDEN` khong co hanh dong nao: backend **khong co** endpoint `unhide`, nen
- * khong ve "Khoi phuc" o day.
+ * - `restore`: chi HIDDEN, sai thi `[ADM-07]` (Task 2.1 them
+ *   `PATCH /admin/recipes/:id/restore` - truoc day DEFER-06 ghi backend khong
+ *   co endpoint unhide nen HIDDEN khong co thao tac nao).
  */
 export function allowedActions(status: string | null | undefined): ModerationAction[] {
   switch (String(status ?? '').toUpperCase()) {
@@ -193,6 +193,8 @@ export function allowedActions(status: string | null | undefined): ModerationAct
     case 'APPROVED':
     case 'REJECTED':
       return ['hide'];
+    case 'HIDDEN':
+      return ['restore'];
     default:
       return [];
   }
@@ -306,5 +308,11 @@ export async function rejectRecipe(id: string, reason: string) {
 /** BR-02: APPROVED|REJECTED -> HIDDEN. Sai trang thai se tra `[ADM-06]`. */
 export async function hideRecipe(id: string) {
   const res = await apiClient.patch(`/admin/recipes/${id}/hide`);
+  return res.data;
+}
+
+/** Task 2.1 [ADM-07]: HIDDEN -> APPROVED. Sai trang thai se tra `[ADM-07]`. */
+export async function restoreRecipe(id: string) {
+  const res = await apiClient.patch(`/admin/recipes/${id}/restore`);
   return res.data;
 }

@@ -23,18 +23,31 @@ export function RecipeModerationLayer({ m }: { m: RecipeModeration }) {
         onApprove={(r) => m.askConfirm('approve', r)}
         onReject={m.askReject}
         onHide={(r) => m.askConfirm('hide', r)}
+        onRestore={(r) => m.askConfirm('restore', r)}
         busyKind={m.busyKind}
       />
 
       <ConfirmDialog
         open={m.confirm != null}
-        title={m.confirm?.kind === 'approve' ? 'Duyệt công thức' : 'Ẩn công thức'}
+        title={
+          m.confirm?.kind === 'approve'
+            ? 'Duyệt công thức'
+            : m.confirm?.kind === 'restore'
+              ? 'Khôi phục công thức'
+              : 'Ẩn công thức'
+        }
         message={
           m.confirm?.kind === 'approve' ? (
             <>
               Duyệt <strong>{m.confirm.recipe.title}</strong> sang trạng thái{' '}
               <strong>Đã duyệt</strong>? Công thức sẽ hiện công khai với mọi
               người dùng.
+            </>
+          ) : m.confirm?.kind === 'restore' ? (
+            <>
+              Khôi phục <strong>{m.confirm.recipe.title}</strong>? Công thức sẽ
+              trở lại trạng thái <strong>Đã duyệt</strong> và hiện công khai với
+              mọi người dùng.
             </>
           ) : (
             <>

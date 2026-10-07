@@ -33,6 +33,7 @@ export function RecipeDetailModal({
   onApprove,
   onReject,
   onHide,
+  onRestore,
   busyKind,
 }: {
   recipeId: string | null;
@@ -40,6 +41,7 @@ export function RecipeDetailModal({
   onApprove: (recipe: ModerationTarget) => void;
   onReject: (recipe: ModerationTarget) => void;
   onHide: (recipe: ModerationTarget) => void;
+  onRestore: (recipe: ModerationTarget) => void;
   busyKind?: ModerationAction | null;
 }) {
   const { data, isLoading, error } = useQuery({
@@ -65,6 +67,7 @@ export function RecipeDetailModal({
             onApprove={onApprove}
             onReject={onReject}
             onHide={onHide}
+            onRestore={onRestore}
             busyKind={busyKind}
             showView={false}
           />

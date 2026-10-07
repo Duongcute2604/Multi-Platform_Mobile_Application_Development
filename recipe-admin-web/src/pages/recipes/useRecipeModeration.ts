@@ -14,6 +14,7 @@ import {
   hideRecipe,
   recipeKeys,
   rejectRecipe,
+  restoreRecipe,
   validateRejectReason,
   type ModerationAction,
 } from './recipeQuery';
@@ -35,11 +36,14 @@ const FALLBACK: Record<ModerationAction, string> = {
   approve: 'Duyệt thất bại',
   reject: 'Từ chối thất bại',
   hide: 'Ẩn thất bại',
+  restore: 'Khôi phục thất bại',
 };
 
-const ACTION_LABEL: Record<'approve' | 'hide', string> = {
+const ACTION_LABEL: Record<ModerationAction, string> = {
   approve: 'Duyệt',
   hide: 'Ẩn',
+  reject: 'Từ chối',
+  restore: 'Khôi phục',
 };
 
 export function useRecipeModeration() {
@@ -48,9 +52,10 @@ export function useRecipeModeration() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   /** Thao tac can xac nhan (khong the undo) */
-  const [confirm, setConfirm] = useState<{ kind: 'approve' | 'hide'; recipe: ModerationTarget } | null>(
-    null,
-  );
+  const [confirm, setConfirm] = useState<{
+    kind: 'approve' | 'hide' | 'restore';
+    recipe: ModerationTarget;
+  } | null>(null);
   const [rejectTarget, setRejectTarget] = useState<ModerationTarget | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectError, setRejectError] = useState<string | null>(null);
@@ -65,6 +70,7 @@ export function useRecipeModeration() {
     mutationFn: (v: ActionVars) => {
       if (v.kind === 'approve') return approveRecipe(v.id);
       if (v.kind === 'reject') return rejectRecipe(v.id, v.reason ?? '');
+      if (v.kind === 'restore') return restoreRecipe(v.id);
       return hideRecipe(v.id);
     },
     onSuccess: async () => {
@@ -88,7 +94,7 @@ export function useRecipeModeration() {
     },
   });
 
-  function askConfirm(kind: 'approve' | 'hide', recipe: ModerationTarget) {
+  function askConfirm(kind: 'approve' | 'hide' | 'restore', recipe: ModerationTarget) {
     setActionError(null);
     // Dong hop thoai chi tiet truoc khi mo hop xac nhan.
     //

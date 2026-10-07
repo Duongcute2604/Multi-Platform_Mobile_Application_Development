@@ -124,6 +124,7 @@ export default function AllRecipesPage() {
           onApprove={(recipe) => m.askConfirm('approve', recipe)}
           onReject={m.askReject}
           onHide={(recipe) => m.askConfirm('hide', recipe)}
+          onRestore={(recipe) => m.askConfirm('restore', recipe)}
           busyKind={m.busyKind}
         />
       ),
