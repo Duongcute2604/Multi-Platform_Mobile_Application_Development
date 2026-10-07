@@ -76,7 +76,7 @@ export default function FoodCheck() {
 
   return (
     <div>
-      <h1 className="text-left text-2xl font-bold">Duyệt món — Kiểm tra tương tác</h1>
+      <h1 className="text-left text-2xl font-bold">Tương tác món</h1>
       <p className="mt-1 text-left text-sm text-neutral-500">
         Nhập các món cần so cùng nhau, mỗi món một dòng (hoặc cách nhau bằng dấu phẩy).
       </p>
