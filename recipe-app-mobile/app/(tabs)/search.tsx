@@ -51,13 +51,23 @@ export default function ManHinhTimKiem() {
 
   // BR-UI: Thời gian chọn tay thắng độ khó; chưa chọn thời gian thì dùng ngưỡng độ khó
   const gioiHanDoKho = doKhoChon && thoiGianChon === null ? DO_KHO_SANG_PHUT[doKhoChon] : {};
-  const gioiHanThoiGian = thoiGianChon ?? gioiHanDoKho.maxCookTime ?? gioiHanDoKho.minCookTime;
-  const chiChieuTren = gioiHanDoKho.maxCookTime !== undefined || thoiGianChon !== null;
-  // BR-REC: BE chỉ lọc page/size/search/tacGiaId, các filter còn lại lọc client-side ở ketQua
+  const minCookTime = gioiHanDoKho.minCookTime;
+  const maxCookTime = thoiGianChon ?? gioiHanDoKho.maxCookTime;
+  // Task 3.5: chế độ ăn (Chay/Vegan/Keto...) không phải field riêng trên BE nên
+  // gộp vào `search` để lọc server-side — không lọc client tránh lệch phân trang.
+  const chuoiTimKiem = [tuKhoaTre, kieuAnChon ? kieuAnChon.toLowerCase() : '']
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  // Task 3.5: đẩy mọi filter lên BE (minCookTime/maxCookTime/servings) — trước
+  // đây lọc client ở `ketQua` nên trang sau bị sai tổng/lệch dữ liệu.
   const thamSo: ThamSoDanhSachCongThuc = {
     page: trang,
     size: KICH_THUOC_TRANG,
-    ...(tuKhoaTre.length > 0 ? { search: tuKhoaTre } : {}),
+    ...(chuoiTimKiem.length > 0 ? { search: chuoiTimKiem } : {}),
+    ...(minCookTime !== undefined ? { minCookTime } : {}),
+    ...(maxCookTime !== undefined ? { maxCookTime } : {}),
+    ...(khauPhanChon ? { servings: khauPhanChon } : {}),
   };
   const { data, isLoading, isFetching, isError, error, refetch } = useDanhSachCongThuc(thamSo);
 
@@ -80,25 +90,13 @@ export default function ManHinhTimKiem() {
   }, [data, trang]);
 
   const ketQua = useMemo(() => {
-    let ds = [...tichLuy];
-    // BR-REC: Lọc client-side vì BE chưa hỗ trợ diet/thời gian/khẩu phần
-    if (kieuAnChon) {
-      const tu = kieuAnChon.toLowerCase();
-      ds = ds.filter(
-        (ct) =>
-          ct.title.toLowerCase().includes(tu) ||
-          (ct.description ?? '').toLowerCase().includes(tu),
-      );
-    }
-    if (gioiHanThoiGian !== undefined) {
-      ds = ds.filter((ct) =>
-        chiChieuTren ? ct.cookTimeMinutes <= gioiHanThoiGian : ct.cookTimeMinutes >= gioiHanThoiGian,
-      );
-    }
-    if (khauPhanChon) ds = ds.filter((ct) => ct.servings >= khauPhanChon);
-    if (sapXep === 'nhanh') ds.sort((a, b) => a.cookTimeMinutes - b.cookTimeMinutes);
-    return ds;
-  }, [tichLuy, sapXep, kieuAnChon, gioiHanThoiGian, chiChieuTren, khauPhanChon]);
+    // Task 3.5: mọi filter (chế độ ăn, thời gian/độ khó, khẩu phần) đã qua
+    // `thamSo` lên BE nên danh sách về sẵn đúng ngữ nghĩa. Chỉ còn sort
+    // 'nhanh' chạy client vì BE sortBy chưa hỗ trợ thời gian nấu (chỉ
+    // createdAt/title/updatedAt/rating/popular) — ghi chú theo plan.
+    if (sapXep !== 'nhanh') return tichLuy;
+    return [...tichLuy].sort((a, b) => a.cookTimeMinutes - b.cookTimeMinutes);
+  }, [tichLuy, sapXep]);
 
   const goiY = ketQua.slice(0, 3);
   // `GET /recipes` trả kiểu phân trang Spring: `content` + `totalElements`

@@ -102,18 +102,6 @@ export async function layCongThucTuongTu(id: string): Promise<CongThucTomTatGoiY
   return duLieu ?? [];
 }
 
-export async function timKiemTheoNguyenLieu(
-  nguyenLieu: string,
-  soLuong = 10,
-): Promise<TrangSpring<CongThuc>> {
-  const duLieu = await goiApi(
-    apiClient
-      .get('recipes/search/by-ingredients', { searchParams: { ingredients: nguyenLieu, number: soLuong } })
-      .json<ApiResponse<TrangSpring<CongThuc>>>(),
-  );
-  return congThucTrangSchema.parse(duLieu);
-}
-
 // BR-UREC: Tạo/sửa/xóa công thức cá nhân. Sửa dùng `PUT` (backend không có PATCH).
 export async function taoCongThuc(payload: TaoCongThucPayload): Promise<CongThuc> {
   const duLieu = await goiApi(

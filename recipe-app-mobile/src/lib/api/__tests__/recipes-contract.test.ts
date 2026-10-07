@@ -116,6 +116,37 @@ describe('layDanhSachCongThuc - Task 3.4 (sortBy rating/popular)', () => {
   });
 });
 
+describe('layDanhSachCongThuc - Task 3.5 (filter server-side)', () => {
+  const TRANG = { success: true, data: { content: [RECIPE_BACKEND], totalElements: 1, totalPages: 1 }, error: null };
+  let urlCuoi: string;
+
+  function mockJsonVaGhiUrl(duLieu: unknown) {
+    global.fetch = jest.fn(async (input: unknown) => {
+      urlCuoi = (input as Request).url;
+      return new Response(JSON.stringify(duLieu), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as unknown as typeof fetch;
+  }
+
+  it('gui minCookTime/maxCookTime/servings khi nguoi dung loc', async () => {
+    mockJsonVaGhiUrl(TRANG);
+    await layDanhSachCongThuc({ minCookTime: 15, maxCookTime: 30, servings: 4 });
+    expect(urlCuoi).toContain('minCookTime=15');
+    expect(urlCuoi).toContain('maxCookTime=30');
+    expect(urlCuoi).toContain('servings=4');
+  });
+
+  it('gui dung 1 trong 3 param khi chi loc mot truong', async () => {
+    mockJsonVaGhiUrl(TRANG);
+    await layDanhSachCongThuc({ maxCookTime: 60 });
+    expect(urlCuoi).toContain('maxCookTime=60');
+    expect(urlCuoi).not.toContain('minCookTime');
+    expect(urlCuoi).not.toContain('servings');
+  });
+});
+
 describe('binhLuan - backend dung ten tieng Viet', () => {
   const BINH_LUAN = {
     id: 'c1',
