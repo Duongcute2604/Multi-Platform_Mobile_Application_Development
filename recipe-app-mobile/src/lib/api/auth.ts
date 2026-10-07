@@ -71,3 +71,27 @@ export async function doiMatKhau(currentPassword: string, newPassword: string): 
       .json<ApiResponse<null>>(),
   );
 }
+
+export interface CapNhatHoSoPayload {
+  displayName?: string;
+  avatarUrl?: string;
+}
+
+/**
+ * Task 3.3: Sửa hồ sơ — PATCH /auth/me. Backend chỉ nhận field tiếng Anh
+ * (`displayName`, `avatarUrl`); callback chủ động bỏ field undefined để không
+ * gửi key thừa (forbidNonWhitelisted của backend).
+ */
+export async function capNhatHoSo(payload: CapNhatHoSoPayload): Promise<{ email: string; displayName: string; avatarUrl: string | null }> {
+  const duLieu = await goiApi(
+    apiClient
+      .patch('auth/me', {
+        json: {
+          ...(payload.displayName !== undefined ? { displayName: payload.displayName } : {}),
+          ...(payload.avatarUrl !== undefined ? { avatarUrl: payload.avatarUrl } : {}),
+        },
+      })
+      .json<ApiResponse<{ email: string; displayName: string; avatarUrl: string | null }>>(),
+  );
+  return duLieu;
+}

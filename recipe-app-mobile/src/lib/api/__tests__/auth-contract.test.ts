@@ -5,7 +5,7 @@
  * request bị ValidationPipe chặn với `forbidNonWhitelisted`. Test ở đây khoá
  * lại đúng tên field backend nhận — đổi tên là test đỏ.
  */
-import { dangNhap, dangKy, doiMatKhau, layThongTinNguoiDung, quenMatKhau } from '../auth';
+import { capNhatHoSo, dangNhap, dangKy, doiMatKhau, layThongTinNguoiDung, quenMatKhau } from '../auth';
 
 jest.mock('../../auth/tokenManager', () => ({
   layAccessToken: jest.fn(async () => 'token'),
@@ -107,5 +107,34 @@ describe('doiMatKhau - Task 3.2', () => {
     expect(bodyDaGui).toEqual({ currentPassword: 'MatKhauCu123', newPassword: 'MatKhauMoi123' });
     expect(methodDaGui).toBe('POST');
     expect(urlDaGui).toContain('auth/change-password');
+  });
+});
+
+describe('capNhatHoSo - Task 3.3', () => {
+  it('PATCH auth/me voi body { displayName, avatarUrl }', async () => {
+    mockJson({
+      success: true,
+      data: { email: 'demo@cookbook.vn', displayName: 'Bếp Mới', avatarUrl: null, role: 'USER', status: 'ACTIVE' },
+      error: null,
+    });
+
+    const ketQua = await capNhatHoSo({ displayName: 'Bếp Mới', avatarUrl: '/uploads/u1.jpg' });
+
+    expect(bodyDaGui).toEqual({ displayName: 'Bếp Mới', avatarUrl: '/uploads/u1.jpg' });
+    expect(methodDaGui).toBe('PATCH');
+    expect(urlDaGui).toContain('auth/me');
+    expect(ketQua.displayName).toBe('Bếp Mới');
+  });
+
+  it('chi gui mot field khi payload thieu field kia', async () => {
+    mockJson({
+      success: true,
+      data: { email: 'demo@cookbook.vn', displayName: 'Bếp Mới', avatarUrl: null, role: 'USER', status: 'ACTIVE' },
+      error: null,
+    });
+
+    await capNhatHoSo({ displayName: 'Bếp Mới' });
+
+    expect(bodyDaGui).toEqual({ displayName: 'Bếp Mới' });
   });
 });

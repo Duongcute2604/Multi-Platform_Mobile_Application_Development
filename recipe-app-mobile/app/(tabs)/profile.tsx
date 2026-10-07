@@ -8,6 +8,7 @@ import {
   LogOut,
   Settings,
   ShoppingCart,
+  UserRound,
   UtensilsCrossed,
 } from 'lucide-react-native';
 import { Avatar } from '../../src/components/ui/Avatar';
@@ -29,7 +30,10 @@ const MUC_NHANH: MucHoSo[] = [
   { nhan: 'Danh sách đi chợ', Icon: ShoppingCart, den: '/(tabs)/shopping' },
 ];
 
-const MUC_TAI_KHOAN: MucHoSo[] = [{ nhan: 'Cài đặt', Icon: Settings, den: '/settings' }];
+const MUC_TAI_KHOAN: MucHoSo[] = [
+  { nhan: 'Sửa hồ sơ', Icon: UserRound, den: '/edit-profile' },
+  { nhan: 'Cài đặt', Icon: Settings, den: '/settings' },
+];
 
 function HangHoSo({ muc, khiBam }: { muc: MucHoSo; khiBam: () => void }) {
   const Icon = muc.Icon;
@@ -48,7 +52,11 @@ export default function ManHinhHoSo() {
   const router = useRouter();
   const daDangNhap = useAuthStore((s) => s.daDangNhap);
   const dangXuat = useAuthStore((s) => s.dangXuat);
+  const nguoiDungStore = useAuthStore((s) => s.nguoiDung);
   const { data, isLoading, isError, refetch } = useHoSoNguoiDung(daDangNhap);
+
+  // Task 3.3: ưu tiên store (được cập nhật ngay sau khi sửa hồ sơ), query là fallback
+  const nguoiDung = nguoiDungStore ?? data;
 
   return (
     <SafeAreaView className="flex-1 bg-mist">
@@ -74,21 +82,21 @@ export default function ManHinhHoSo() {
         </View>
 
         <View className="px-4 pt-2">
-          {isLoading ? (
+          {isLoading && !nguoiDung ? (
             <TrangDangTai />
-          ) : isError || !data ? (
+          ) : isError && !nguoiDung ? (
             <TrangLoi loi="Không tải được hồ sơ" khiThuLai={() => refetch()} />
-          ) : (
+          ) : nguoiDung ? (
             <View className="mt-4 flex-row items-center gap-4 rounded-3xl bg-white p-5 shadow-sm">
-              <Avatar nguon={data.avatarUrl ?? null} ten={data.displayName} kichThuoc={72} />
+              <Avatar nguon={nguoiDung.avatarUrl ?? null} ten={nguoiDung.displayName} kichThuoc={72} />
               <View className="flex-1">
-                <TitleText kichThuoc="2xl">{data.displayName}</TitleText>
+                <TitleText kichThuoc="2xl">{nguoiDung.displayName}</TitleText>
                 <CaptionText>Nhà phát triển công thức</CaptionText>
-                <CaptionText>{data.email}</CaptionText>
+                <CaptionText>{nguoiDung.email}</CaptionText>
               </View>
               <ChevronRight size={18} color="#97A2B0" />
             </View>
-          )}
+          ) : null}
         </View>
 
         <View className="mt-4 px-4">
@@ -101,7 +109,9 @@ export default function ManHinhHoSo() {
 
         <View className="mt-4 px-4 pb-8">
           <View className="rounded-3xl bg-white px-4 shadow-sm">
-            <HangHoSo muc={MUC_TAI_KHOAN[0]} khiBam={() => router.push('/settings')} />
+            {MUC_TAI_KHOAN.map((muc) => (
+              <HangHoSo key={muc.nhan} muc={muc} khiBam={() => router.push(muc.den as never)} />
+            ))}
             <Pressable
               accessibilityRole="button"
               onPress={async () => {

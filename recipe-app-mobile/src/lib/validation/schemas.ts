@@ -41,6 +41,17 @@ export const doiMatKhauSchema = z
 
 export type DoiMatKhauForm = z.infer<typeof doiMatKhauSchema>;
 
+// BR-AUTH: Khớp UpdateProfileDto backend (displayName 2..50, avatarUrl <=500)
+export const suaHoSoSchema = z.object({
+  displayName: z
+    .string()
+    .min(2, 'AUTH-16 Tên hiển thị tối thiểu 2 ký tự')
+    .max(50, 'AUTH-16 Tên hiển thị tối đa 50 ký tự'),
+  avatarUrl: z.string().max(500).optional(),
+});
+
+export type SuaHoSoForm = z.infer<typeof suaHoSoSchema>;
+
 // BR-UREC: Khớp TaoCongThucDto backend
 export const nguyenLieuMoiSchema = z.object({
   ten: z.string().min(1, 'REC-00 Tên nguyên liệu không được trống').max(200),
