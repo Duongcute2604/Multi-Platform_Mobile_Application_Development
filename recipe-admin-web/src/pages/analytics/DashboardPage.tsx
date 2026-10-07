@@ -128,7 +128,11 @@ export default function DashboardPage() {
           ) : isLoading ? (
             '…'
           ) : (
-            '—'
+            // Task 4.3: BR-05 chỉ tính món >= 5 lượt đánh giá — khi chưa đủ,
+            // hiện fallback rõ ràng thay vì dấu gạch ngang vô nghĩa.
+            <span className="text-sm font-normal text-gray-500">
+              Chưa đủ ≥5 lượt đánh giá
+            </span>
           )}
         </MetricCard>
       </div>

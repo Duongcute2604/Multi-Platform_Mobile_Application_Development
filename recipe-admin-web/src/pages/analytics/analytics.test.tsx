@@ -265,11 +265,13 @@ describe('DashboardPage', () => {
     await waitFor(() => expect(screen.getByText(/\[MET-01\]/)).toBeInTheDocument());
   });
 
-  it('khong co mon top (topRatedRecipes rong) thi card hien "—"', async () => {
+  it('khong co mon top (topRatedRecipes rong) thi card hien fallback "Chưa đủ ≥5 lượt đánh giá"', async () => {
     serveDash(dash({ topRatedRecipes: [] }));
     renderWithProviders(<DashboardPage />);
     await waitFor(() => expect(screen.getByText('3.420')).toBeInTheDocument());
     const topCard = screen.getByText('Món đánh giá cao').closest('div') as HTMLElement;
-    expect(within(topCard).getByText('—')).toBeInTheDocument();
+    expect(within(topCard).getByText(/Chưa đủ ≥5 lượt đánh giá/)).toBeInTheDocument();
+    // Không còn hiển thị dấu gạch ngang vô nghĩa.
+    expect(within(topCard).queryByText('—')).not.toBeInTheDocument();
   });
 });
