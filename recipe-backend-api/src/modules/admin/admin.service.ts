@@ -171,4 +171,27 @@ export class AdminService {
       .catch(() => undefined);
     return updated;
   }
+
+  // Admin khôi phục bài HIDDEN -> APPROVED. Hành động ADMIN riêng, không qua
+  // ALLOWED_STATUSES của tác giả (tác giả không tự mở lại bài bị ẩn).
+  async restoreRecipe(id: string) {
+    const recipe = await this.prisma.recipe.findUnique({ where: { id } });
+    if (!recipe) throw new NotFoundException('[REC-06] Công thức không tồn tại');
+    if (recipe.status !== 'HIDDEN') {
+      throw new ConflictException('[ADM-07] Chỉ khôi phục được công thức ở trạng thái HIDDEN');
+    }
+    const updated = await this.prisma.recipe.update({
+      where: { id },
+      data: { status: 'APPROVED' as RecipeStatus, rejectionReason: null },
+      select: { title: true, status: true },
+    });
+    // BR-NOTI: Báo cho tác giả khi bài được khôi phục (lỗi gửi không chặn khôi phục)
+    await this.thongBao
+      .guiThongBao(recipe.authorId, 'Công thức đã được khôi phục', `Món "${recipe.title}" đã được đăng trở lại.`, {
+        loai: 'recipe_approved',
+        congThucId: id,
+      })
+      .catch(() => undefined);
+    return updated;
+  }
 }

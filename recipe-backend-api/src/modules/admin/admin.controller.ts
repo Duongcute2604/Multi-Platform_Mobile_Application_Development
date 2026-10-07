@@ -107,4 +107,14 @@ export class AdminController {
   hide(@Param('id') id: string) {
     return this.service.hideRecipe(id);
   }
+
+  @Patch('recipes/:id/restore')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(AuditInterceptor)
+  @AuditLog('RESTORE', 'RECIPE')
+  @ApiOperation({ summary: 'Khôi phục công thức HIDDEN → APPROVED (chỉ ADMIN)' })
+  restore(@Param('id') id: string) {
+    return this.service.restoreRecipe(id);
+  }
 }
