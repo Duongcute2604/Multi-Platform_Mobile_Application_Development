@@ -113,6 +113,15 @@ export function DataTable<T>({
     return String(v);
   }
 
+  // Task 4.2: `rowKey` có thể trả undefined/rỗng (dữ liệu không đủ id) — key
+  // undefined làm React báo "unique key" warning cho từng hàng. Luôn ép về
+  // string và fallback theo index trong trang để không warning, thay vì để
+  // `key={undefined}` lọt ra.
+  function keyOf(row: T, index: number): string {
+    const k = String(rowKey(row) ?? '');
+    return k.trim().length > 0 ? k : `hang-${index}`;
+  }
+
   return (
     <div>
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
@@ -176,7 +185,7 @@ export function DataTable<T>({
             ) : (
               sorted.map((row, i) => (
                 <tr
-                  key={rowKey(row)}
+                  key={keyOf(row, i)}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   className={onRowClick ? 'hover:bg-gray-50 cursor-pointer' : 'hover:bg-gray-50'}
                 >

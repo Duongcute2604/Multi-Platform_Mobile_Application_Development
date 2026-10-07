@@ -70,8 +70,11 @@ export class AdminService {
         skip: page * size,
         take: size,
         orderBy: { createdAt: 'desc' },
-        // Không trả id (UUID) trong list/public endpoints -> FE tự tính STT
+        // Bắt buộc trả id: web dùng làm `rowKey` của bảng và gửi PATCH
+        // /admin/users/:id/status khi khóa/mở khóa. (Từng bỏ id vì tưởng FE
+        // chỉ cần STT — ngược lại làm hỏng cả hai thứ đó.)
         select: {
+          id: true,
           email: true,
           displayName: true,
           avatarUrl: true,

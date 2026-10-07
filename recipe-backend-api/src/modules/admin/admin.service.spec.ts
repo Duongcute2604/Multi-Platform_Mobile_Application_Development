@@ -61,3 +61,36 @@ describe('AdminService.restoreRecipe', () => {
     await expect(service.restoreRecipe('r1')).rejects.toThrow('[ADM-07]');
   });
 });
+
+// Task 4.2 (web): trước đây findAllUsers cố ý bỏ `id` khỏi select nên trang
+// quản trị không có key hàng (React warning) và action "Khóa" gửi id undefined.
+// Test này khoá: `id` PHẢI có trong select + phải nằm trong content trả về.
+describe('AdminService.findAllUsers', () => {
+  it('select phải chứa id để web dùng làm row key và gửi PATCH /admin/users/:id/status', async () => {
+    const prisma: any = {
+      user: {
+        findMany: jest.fn(async () => [
+          {
+            id: 'u-1',
+            email: 'demo@cookbook.vn',
+            displayName: 'Demo',
+            avatarUrl: null,
+            role: 'USER',
+            status: 'ACTIVE',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            _count: { recipes: 0, comments: 0, favorites: 0 },
+          },
+        ]),
+        count: jest.fn(async () => 1),
+      },
+    };
+    const service = new AdminService(prisma, { guiThongBao: jest.fn() } as any);
+
+    const ketQua = await service.findAllUsers({ page: 0, size: 10 });
+
+    expect(ketQua.content[0].id).toBe('u-1');
+    const select = prisma.user.findMany.mock.calls[0][0].select as Record<string, unknown>;
+    expect(select.id).toBe(true);
+  });
+});
