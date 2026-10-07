@@ -40,7 +40,26 @@ export const apiClient = ky.create({
         const tieuDe = new Headers(request.headers);
         tieuDe.set('Authorization', `Bearer ${tokenMoi}`);
         tieuDe.set(DA_LAM_MOI_HEADER, '1');
-        return ky(new Request(request, { headers: tieuDe }), options);
+        // throwHttpErrors:false để lần retry 401 KHÔNG ném HTTPError giữa chừng —
+        // cho phép inspect status dưới và parse body lỗi nghiệp vụ.
+        const loiThuLai = await ky(new Request(request, { headers: tieuDe }), {
+          ...options,
+          throwHttpErrors: false,
+        });
+        // Task 5.2: retry vẫn 401 là lỗi NGHIỆP VỤ (vd [AUTH-14] sai mật khẩu hiện tại),
+        // không phải token hết hạn. ky đã consume body nên phải parse ngay ở đây rồi
+        // throw ApiError — nếu để response về goiApi thì bodyUsed=true làm mất message.
+        if (loiThuLai.status === 401) {
+          let than: ApiResponse<unknown> | null = null;
+          try {
+            than = (await loiThuLai.clone().json()) as ApiResponse<unknown>;
+          } catch {
+            than = null;
+          }
+          if (than?.error) throw new ApiError(than.error.code, than.error.message, 401);
+          return loiThuLai;
+        }
+        return loiThuLai;
       },
     ],
   },
@@ -61,7 +80,10 @@ export async function goiApi<T>(loiHua: Promise<ApiResponse<T>>): Promise<T> {
     if (loi instanceof ApiError) throw loi;
     if (loi instanceof HTTPError) {
       try {
-        const body = (await loi.response.json()) as ApiResponse<unknown>;
+        // BR-API: đọc qua clone() để tránh body đã bị ky consume trong vòng
+        // refresh/retry 401 — nếu không thì rơi vào fallback "Lỗi HTTP <status>"
+        // làm mất message lỗi cụ thể từ backend (vd [AUTH-14]).
+        const body = (await loi.response.clone().json()) as ApiResponse<unknown>;
         if (body?.error) throw new ApiError(body.error.code, body.error.message, loi.response.status);
       } catch (e) {
         if (e instanceof ApiError) throw e;

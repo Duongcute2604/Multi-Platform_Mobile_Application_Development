@@ -62,6 +62,39 @@ describe('api client', () => {
     expect(reqThuLai.headers.get('Authorization')).toBe('Bearer token-moi');
   });
 
+  it('không đánh mất message lỗi từ backend khi 401 dù đã qua refresh/retry', async () => {
+    // Task 5.2 verify: sai mật khẩu hiện tại ở change-password -> backend 401 kèm
+    // body error { code:'AUTH-02', message:'[AUTH-14] ...' }. Sau refresh+retry phải
+    // hiện message backend, KHÔNG được rơi vào fallback "Lỗi HTTP 401".
+    const fetchMock = jest
+      .fn<Promise<Response>, [Request]>()
+      .mockResolvedValueOnce(new Response('het han', { status: 401 }))
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            success: false,
+            data: null,
+            error: { code: 'AUTH-02', message: '[AUTH-14] Mật khẩu hiện tại không chính xác' },
+          },
+          401,
+        ),
+      );
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await expect(
+      goiApi(
+        apiClient
+          .post('auth/change-password', { json: { currentPassword: 'sai', newPassword: 'MoiPass123' } })
+          .json<ApiResponse<null>>(),
+      ),
+    ).rejects.toMatchObject({
+      name: 'ApiError',
+      maLoi: 'AUTH-02',
+      message: '[AUTH-14] Mật khẩu hiện tại không chính xác',
+    } as Partial<ApiError>);
+    expect(lamMoiAccessToken).toHaveBeenCalledTimes(1);
+  });
+
   it('ném AUTH-02 khi refresh thất bại', async () => {
     lamMoiAccessToken.mockResolvedValueOnce(null);
     global.fetch = jest.fn(async () => new Response('het han', { status: 401 })) as unknown as typeof fetch;
