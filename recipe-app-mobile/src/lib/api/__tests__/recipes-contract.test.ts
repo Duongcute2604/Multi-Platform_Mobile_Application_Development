@@ -5,7 +5,7 @@
  * author) nhưng bình luận lại dùng tiếng Việt (noiDung, tacGia.tenHienThi).
  * Test khoá đúng sự lệch lẫn này để không "đều hoá" nhầm làm hỏng API.
  */
-import { danhGiaCongThuc, layBinhLuan, layChiTietCongThuc, taoBinhLuan } from '../recipes';
+import { danhGiaCongThuc, layBinhLuan, layChiTietCongThuc, layDanhSachCongThuc, taoBinhLuan } from '../recipes';
 
 jest.mock('../../auth/tokenManager', () => ({
   layAccessToken: jest.fn(async () => 'token'),
@@ -78,6 +78,41 @@ describe('layChiTietCongThuc - doc field tieng Anh cua backend', () => {
     expect(ct.author?.displayName).toBe('Bếp Nhà');
     expect(ct.ingredients[0].originalText).toBe('500g thịt bò');
     expect(ct.steps[0].content).toBe('Rửa thịt');
+  });
+});
+
+describe('layDanhSachCongThuc - Task 3.4 (sortBy rating/popular)', () => {
+  const TRANG = { success: true, data: { content: [RECIPE_BACKEND], totalElements: 1, totalPages: 1 }, error: null };
+  let urlCuoi: string;
+
+  function mockJsonVaGhiUrl(duLieu: unknown) {
+    global.fetch = jest.fn(async (input: unknown) => {
+      urlCuoi = (input as Request).url;
+      return new Response(JSON.stringify(duLieu), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as unknown as typeof fetch;
+  }
+
+  it('gui sortBy=rating khi noiBat dung', async () => {
+    mockJsonVaGhiUrl(TRANG);
+    await layDanhSachCongThuc({ sortBy: 'rating', size: 5 });
+    expect(urlCuoi).toContain('sortBy=rating');
+  });
+
+  it('gui sortBy=popular khi phoBien dung', async () => {
+    mockJsonVaGhiUrl(TRANG);
+    await layDanhSachCongThuc({ sortBy: 'popular', size: 6 });
+    expect(urlCuoi).toContain('sortBy=popular');
+  });
+
+  it('khong set sortBy khi goi mac dinh (va van gui page/size)', async () => {
+    mockJsonVaGhiUrl(TRANG);
+    await layDanhSachCongThuc({ page: 1, size: 10 });
+    expect(urlCuoi).toContain('page=1');
+    expect(urlCuoi).toContain('size=10');
+    expect(urlCuoi).not.toContain('sortBy');
   });
 });
 

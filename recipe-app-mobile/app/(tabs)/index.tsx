@@ -112,10 +112,16 @@ export default function ManHinhTrangChu() {
   const [nhomChon, setNhomChon] = useState(0);
   const tuKhoaNhom = TU_KHOA_NHOM[NHOM_MON[nhomChon]];
 
-  const noiBat = useDanhSachCongThuc({ page: 0, size: 5, ...(tuKhoaNhom ? { search: tuKhoaNhom } : {}) });
+  const noiBat = useDanhSachCongThuc({
+    page: 0,
+    size: 5,
+    sortBy: 'rating',
+    ...(tuKhoaNhom ? { search: tuKhoaNhom } : {}),
+  });
   const phoBien = useDanhSachCongThuc({
     page: 0,
     size: 6,
+    sortBy: 'popular',
     ...(tuKhoaNhom ? { search: tuKhoaNhom } : {}),
   });
   const yeuThich = useDanhSachYeuThich(0, 100);

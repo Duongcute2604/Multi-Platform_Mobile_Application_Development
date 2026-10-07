@@ -29,6 +29,12 @@ export interface ThamSoDanhSachCongThuc {
   size?: number;
   search?: string;
   tacGiaId?: string;
+  /** Task 3.4/3.5: backend hỗ trợ createdAt|title|updatedAt|rating|popular */
+  sortBy?: string;
+  /** Task 3.5: lọc theo thời gian nấu (phút) + khẩu phần tối thiểu */
+  minCookTime?: number;
+  maxCookTime?: number;
+  servings?: number;
 }
 
 /** DTO tạo/sửa — đúng tên `CreateRecipeDto` của backend. */
@@ -63,6 +69,10 @@ export async function layDanhSachCongThuc(
           page: thamSo.page ?? 0,
           size: thamSo.size ?? KICH_THUOC_TRANG_MAC_DINH,
           ...(thamSo.search ? { search: thamSo.search } : {}),
+          ...(thamSo.sortBy ? { sortBy: thamSo.sortBy } : {}),
+          ...(thamSo.minCookTime !== undefined ? { minCookTime: thamSo.minCookTime } : {}),
+          ...(thamSo.maxCookTime !== undefined ? { maxCookTime: thamSo.maxCookTime } : {}),
+          ...(thamSo.servings !== undefined ? { servings: thamSo.servings } : {}),
         },
       })
       .json<ApiResponse<TrangSpring<CongThuc>>>(),
