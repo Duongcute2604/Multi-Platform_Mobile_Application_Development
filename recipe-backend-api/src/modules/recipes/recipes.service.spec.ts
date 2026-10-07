@@ -1,5 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { BadRequestException } from '@nestjs/common';
 import { RecipesService } from './recipes.service';
 import { RecipeQueryDto } from './dto/recipe-query.dto';
 
@@ -114,5 +115,88 @@ describe('RecipesService.findAll sort', () => {
     const loai = await khi({ sortBy: 'khuVuon' });
     expect(loai.length).toBeGreaterThan(0);
     expect(loai[0].constraints?.isIn).toContain('[REC-05]');
+  });
+});
+
+// Task 2.3: filter theo thời gian nấu + khẩu phần (server-side)
+describe('RecipesService.findAll filter (minCookTime/maxCookTime/servings)', () => {
+  const taoService = () => {
+    const prisma: any = {
+      recipe: {
+        findMany: jest.fn((args: any) => {
+          // Giai đoạn rating (select.ratings) không dùng ở đây — trả rỗng
+          if (args?.select?.ratings) return Promise.resolve([]);
+          return Promise.resolve([]);
+        }),
+        count: jest.fn().mockResolvedValue(0),
+      },
+    };
+    return { service: new RecipesService(prisma), prisma };
+  };
+
+  it('minCookTime/maxCookTime -> where cookTimeMinutes { gte, lte }', async () => {
+    const { service, prisma } = taoService();
+    const query = plainToInstance(RecipeQueryDto, { minCookTime: 10, maxCookTime: 60 });
+    await service.findAll(query);
+    expect(prisma.recipe.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          cookTimeMinutes: { gte: 10, lte: 60 },
+        }),
+      }),
+    );
+  });
+
+  it('chỉ minCookTime -> chỉ set gte (không có lte)', async () => {
+    const { service, prisma } = taoService();
+    const query = plainToInstance(RecipeQueryDto, { minCookTime: 15 });
+    await service.findAll(query);
+    expect(prisma.recipe.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          cookTimeMinutes: { gte: 15 },
+        }),
+      }),
+    );
+  });
+
+  it('servings -> where servings { gte }', async () => {
+    const { service, prisma } = taoService();
+    const query = plainToInstance(RecipeQueryDto, { servings: 4 });
+    await service.findAll(query);
+    expect(prisma.recipe.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ servings: { gte: 4 } }),
+      }),
+    );
+  });
+
+  it('không truyền filter -> không có khoá cookTimeMinutes/servings trong where', async () => {
+    const { service, prisma } = taoService();
+    const query = plainToInstance(RecipeQueryDto, {});
+    await service.findAll(query);
+    const called = prisma.recipe.findMany.mock.calls[0][0] as any;
+    expect(called.where.cookTimeMinutes).toBeUndefined();
+    expect(called.where.servings).toBeUndefined();
+  });
+
+  it('server tự chặn min > max bằng BadRequestException ([REC-05])', async () => {
+    const { service } = taoService();
+    const query = plainToInstance(RecipeQueryDto, { minCookTime: 60, maxCookTime: 10 });
+    await expect(service.findAll(query)).rejects.toThrow(BadRequestException);
+    await expect(service.findAll(query)).rejects.toThrow('[REC-05]');
+  });
+
+  it('DTO từ chối min > max bằng lỗi validation [REC-05]', async () => {
+    const loi = await validate(plainToInstance(RecipeQueryDto, { minCookTime: 60, maxCookTime: 10 }));
+    expect(loi.length).toBeGreaterThan(0);
+    const chuoi = JSON.stringify(loi.map((x) => x.constraints));
+    expect(chuoi).toContain('[REC-05]');
+  });
+
+  it('DTO chấp nhận filter hợp lệ và loại bỏ giá trị âm / servings < 1', async () => {
+    await expect(validate(plainToInstance(RecipeQueryDto, { minCookTime: 0, maxCookTime: 120, servings: 2 }))).resolves.toHaveLength(0);
+    const loi = await validate(plainToInstance(RecipeQueryDto, { minCookTime: -5, servings: 0 }));
+    expect(loi.length).toBeGreaterThan(0);
   });
 });

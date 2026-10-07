@@ -86,6 +86,20 @@ export class RecipesService {
     if (query.tagNames?.length) {
       where.tags = { some: { name: { in: query.tagNames } } };
     }
+    // Task 2.3: lọc theo thời gian nấu + khẩu phần (chỉ set field có mặt)
+    if (query.minCookTime !== undefined || query.maxCookTime !== undefined) {
+      if (query.minCookTime !== undefined && query.maxCookTime !== undefined && query.maxCookTime < query.minCookTime) {
+        // DTO đã chặn qua ValidationPipe; chống gọi service trực tiếp
+        throw new BadRequestException('[REC-05] maxCookTime phải lớn hơn hoặc bằng minCookTime');
+      }
+      where.cookTimeMinutes = {
+        ...(query.minCookTime !== undefined ? { gte: query.minCookTime } : {}),
+        ...(query.maxCookTime !== undefined ? { lte: query.maxCookTime } : {}),
+      };
+    }
+    if (query.servings !== undefined) {
+      where.servings = { gte: query.servings };
+    }
 
     const total = await this.prisma.recipe.count({ where });
 
