@@ -13,6 +13,10 @@ export default function ManHinhCaiDat() {
   const datCheDoSangToi = useUiStore((s) => s.datCheDoSangToi);
   const dinhDangNgay = useUiStore((s) => s.dinhDangNgay);
   const datDinhDangNgay = useUiStore((s) => s.datDinhDangNgay);
+  const thongBaoNacGioNau = useUiStore((s) => s.thongBaoNacGioNau);
+  const datThongBaoNacGioNau = useUiStore((s) => s.datThongBaoNacGioNau);
+  const thongBaoNacDiCho = useUiStore((s) => s.thongBaoNacDiCho);
+  const datThongBaoNacDiCho = useUiStore((s) => s.datThongBaoNacDiCho);
 
   return (
     <SafeAreaView className="flex-1 bg-mist">
@@ -110,14 +114,14 @@ export default function ManHinhCaiDat() {
           <OChuyenDoi
             nhan="Nhắc giờ nấu"
             moTa="Gợi ý món theo bữa chính trong ngày"
-            giaTri={true}
-            khiDoi={() => {}}
+            giaTri={thongBaoNacGioNau}
+            khiDoi={datThongBaoNacGioNau}
           />
           <OChuyenDoi
             nhan="Nhắc đi chợ cuối tuần"
             moTa="Tạo danh sách đi chợ từ kế hoạch ăn"
-            giaTri={false}
-            khiDoi={() => {}}
+            giaTri={thongBaoNacDiCho}
+            khiDoi={datThongBaoNacDiCho}
           />
         </View>
 
