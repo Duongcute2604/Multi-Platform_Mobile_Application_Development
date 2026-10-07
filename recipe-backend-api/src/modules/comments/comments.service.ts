@@ -88,7 +88,7 @@ export class CommentsService {
                 skip: trang * kichThuoc,
                 take: kichThuoc,
                 orderBy: { createdAt: 'desc' },
-                include: { user: true, replies: true },
+                include: { user: true, replies: { where: { deletedAt: null } } },
             }),
             this.prisma.comment.count({ where }),
         ]);
@@ -142,7 +142,7 @@ export class CommentsService {
                 content: dto.noiDung,
                 parentId: dto.chaId,
             },
-            include: { user: true, replies: true },
+            include: { user: true, replies: { where: { deletedAt: null } } },
         });
 
         return this.toBinhLuan(comment);
@@ -164,7 +164,7 @@ export class CommentsService {
         const items = await this.prisma.comment.findMany({
             where: { parentId: id, deletedAt: null },
             orderBy: { createdAt: 'asc' },
-            include: { user: true, replies: true },
+            include: { user: true, replies: { where: { deletedAt: null } } },
         });
         return {
             noiDung: items.map((c) => this.toBinhLuan(c)),
@@ -193,7 +193,7 @@ export class CommentsService {
         const comment = await this.prisma.comment.update({
             where: { id },
             data: { content: dto.noiDung },
-            include: { user: true, replies: true },
+            include: { user: true, replies: { where: { deletedAt: null } } },
         });
         return this.toBinhLuan(comment);
     }
