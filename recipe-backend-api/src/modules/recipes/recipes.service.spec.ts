@@ -28,7 +28,7 @@ describe('RecipesService.findAll sort', () => {
         count: jest.fn().mockResolvedValue(candidates.length),
       },
     };
-    return { service: new RecipesService(prisma), prisma };
+    return { service: new RecipesService(prisma, { kiemTraVaGhiNhan: jest.fn() } as any), prisma };
   };
 
   it('sortBy=rating xếp theo điểm trung bình giảm dần, món chưa có lượt đánh giá ở cuối', async () => {
@@ -131,7 +131,7 @@ describe('RecipesService.findAll filter (minCookTime/maxCookTime/servings)', () 
         count: jest.fn().mockResolvedValue(0),
       },
     };
-    return { service: new RecipesService(prisma), prisma };
+    return { service: new RecipesService(prisma, { kiemTraVaGhiNhan: jest.fn() } as any), prisma };
   };
 
   it('minCookTime/maxCookTime -> where cookTimeMinutes { gte, lte }', async () => {
@@ -198,5 +198,51 @@ describe('RecipesService.findAll filter (minCookTime/maxCookTime/servings)', () 
     await expect(validate(plainToInstance(RecipeQueryDto, { minCookTime: 0, maxCookTime: 120, servings: 2 }))).resolves.toHaveLength(0);
     const loi = await validate(plainToInstance(RecipeQueryDto, { minCookTime: -5, servings: 0 }));
     expect(loi.length).toBeGreaterThan(0);
+  });
+});
+
+// Auto-kiểm độc tố khi gửi duyệt: nội dung bẩn -> ném [REC-09], không chuyển PENDING.
+// ModerationService đã được unit-test riêng; ở đây mock đúng ranh giới service.
+describe('RecipesService.submitForReview kiểm độc tố', () => {
+  const taoService = (ketQuaKiem: { hopLe: boolean; tuKhoaTrung: string[]; soLanTrungLichSu: number }) => {
+    const prisma: any = {
+      recipe: {
+        findUnique: jest.fn(async () => ({
+          id: 'r1',
+          authorId: 'u1',
+          status: 'DRAFT',
+          deletedAt: null,
+          title: 'Món X',
+          description: 'Mô tả',
+        })),
+        update: jest.fn(async ({ data }: any) => ({ id: 'r1', status: data.status })),
+      },
+      recipeStep: {
+        findMany: jest.fn(async () => [{ content: 'Bước 1: sơ chế' }]),
+      },
+    };
+    const moderation: any = { kiemTraVaGhiNhan: jest.fn(async () => ketQuaKiem) };
+    return { service: new RecipesService(prisma, moderation), prisma };
+  };
+
+  it('nội dung bẩn -> ném [REC-09] kèm từ trúng + số lần lịch sử, không chuyển PENDING', async () => {
+    const { service, prisma } = taoService({ hopLe: false, tuKhoaTrung: ['độc hại'], soLanTrungLichSu: 2 });
+    await expect(service.submitForReview('r1', 'u1', 'USER')).rejects.toThrow(/\[REC-09\].*độc hại.*2 lần/);
+    expect(prisma.recipe.update).not.toHaveBeenCalled();
+  });
+
+  it('nội dung sạch -> chuyển PENDING như bình thường (qua trọn kiểm tra)', async () => {
+    const { service, prisma } = taoService({ hopLe: true, tuKhoaTrung: [], soLanTrungLichSu: 0 });
+    const kq = await service.submitForReview('r1', 'u1', 'USER');
+    expect(kq.status).toBe('PENDING');
+    expect(prisma.recipe.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: 'PENDING' } }));
+  });
+
+  it('gửi bẩn nhưng không có ca trùng lịch sử -> thông báo không nhắc "từng bị chặn"', async () => {
+    const { service } = taoService({ hopLe: false, tuKhoaTrung: ['spam'], soLanTrungLichSu: 0 });
+    await expect(service.submitForReview('r1', 'u1', 'USER')).rejects.toThrow(/\[REC-09\]/);
+    await expect(
+      service.submitForReview('r1', 'u1', 'USER'),
+    ).rejects.not.toThrow(/từng bị chặn/);
   });
 });

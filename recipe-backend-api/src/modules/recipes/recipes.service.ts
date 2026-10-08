@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { Prisma, RecipeStatus, Role } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ModerationService } from '../moderation/moderation.service';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { RecipeQueryDto } from './dto/recipe-query.dto';
 
@@ -15,7 +16,10 @@ const ALLOWED_STATUSES: Map<string, string[]> = new Map([
 
 @Injectable()
 export class RecipesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private moderation: ModerationService,
+  ) {}
 
   // Không trả id (UUID) trong list/public endpoints -> FE tự tính STT = index + 1 + page * size
   // Riêng ADMIN: trả thêm id để thao tác duyệt/cấm (admin là endpoint nội bộ, không public)
@@ -381,6 +385,31 @@ export class RecipesService {
         `[REC-07] Không thể gửi duyệt từ trạng thái ${existing.status} (chỉ DRAFT/REJECTED)`,
       );
     }
+
+    // Auto-kiểm độc tố trước khi chuyển PENDING. Bẩn -> ModerationService đã ghi 1 ca
+    // vào lịch sử (để cảnh báo user sau), ở đây chỉ chặn + trả REC-09 cho client.
+    const cacBuoc = await this.prisma.recipeStep.findMany({
+      where: { recipeId: id },
+      orderBy: { stepOrder: 'asc' },
+      select: { content: true },
+    });
+    const kq = await this.moderation.kiemTraVaGhiNhan({
+      userId,
+      recipeId: id,
+      tieuDe: existing.title,
+      moTa: existing.description,
+      cacBuoc: cacBuoc.map((s) => s.content),
+    });
+    if (!kq.hopLe) {
+      const lichSu =
+        kq.soLanTrungLichSu > 0
+          ? `; nội dung từng bị chặn ${kq.soLanTrungLichSu} lần trước đó`
+          : '';
+      throw new BadRequestException(
+        `[REC-09] Nội dung không phù hợp, phát hiện từ cấm: ${kq.tuKhoaTrung.join(', ')}${lichSu}. Vui lòng sửa nội dung rồi gửi duyệt lại.`,
+      );
+    }
+
     return this.prisma.recipe.update({
       where: { id },
       data: { status: 'PENDING' as RecipeStatus },

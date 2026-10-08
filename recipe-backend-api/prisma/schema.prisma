@@ -112,6 +112,7 @@ model User {
   activities    UserActivity[]
   auditLogs     AuditLog[]
   tokens        DeviceToken[]
+  moderationCases ModerationCase[]
 }
 
 model UserPreferences {
@@ -170,6 +171,7 @@ model Recipe {
   ratings         Rating[]
   comments        Comment[]
   reports         Report[]
+  moderationCases ModerationCase[]
   mealPlanItems   MealPlanItem[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -359,6 +361,28 @@ model Report {
   @@index([recipeId])
   @@index([recipeReferenceId])
   @@index([status])
+}
+
+// Từ cấm dùng cho auto-kiểm độc tố khi gửi duyệt (seed qua db:seed / insert tay)
+model ToxicKeyword {
+  id        String   @id @default(uuid())
+  word      String   @unique @db.VarChar(100) // từ gốc (VD "độc hại")
+  createdAt DateTime @default(now())
+}
+
+// Kho ca nội dung từng bị chặn khi gửi duyệt — so khớp để cảnh báo user sau
+model ModerationCase {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId        String?
+  recipe          Recipe?  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  matchedKeywords String   @db.Text // CSV chuẩn hoá (không dấu, thường): "doc hai, spam"
+  excerpt         String   @db.Text // trích ~200 ký tự gốc quanh vị trí trúng
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([recipeId])
 }
 
 model DeviceToken {
