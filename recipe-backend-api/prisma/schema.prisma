@@ -82,6 +82,7 @@ enum AuditAction {
   REJECT
   HIDE
   UNHIDE
+  RESTORE
   BAN_USER
   ACTIVATE_USER
   CHANGE_ROLE
