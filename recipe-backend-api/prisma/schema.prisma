@@ -378,7 +378,7 @@ model ModerationCase {
   recipeId        String?
   recipe          Recipe?  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   matchedKeywords String   @db.Text // CSV chuẩn hoá (không dấu, thường): "doc hai, spam"
-  excerpt         String   @db.Text // trích ~200 ký tự gốc quanh vị trí trúng
+  excerpt         String   @db.Text // trích 200 ký tự GỐC đầu (tiêu đề + mô tả + bước) để admin đối chiếu; từ trúng nằm riêng ở matchedKeywords
   createdAt       DateTime @default(now())
 
   @@index([userId])

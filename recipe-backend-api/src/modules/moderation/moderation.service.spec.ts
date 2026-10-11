@@ -134,4 +134,65 @@ describe('ModerationService.kiemTraVaGhiNhan', () => {
     expect(kq.hopLe).toBe(true);
     expect(prisma.moderationCase.create).not.toHaveBeenCalled();
   });
+
+  // Review quan trung #1: `contains` tren CSV chi la bo loc — phai xac nhan lai
+  // bang token nguyen, khong thi tu ngan ('an') se khop con trong ca khac ('hang trang')
+  // va ke them "N lan truoc do" sai cho user ngay chan.
+  it('từ ngắn không được cộng nhờ khớp con trong CSV ca khác ("ăn" không khớp "hang trang")', async () => {
+    const { service } = taoService(['ăn'], [{ id: 'c1', matchedKeywords: 'hang trang' }]);
+    const kq = await service.kiemTraVaGhiNhan({
+      userId: 'u1',
+      recipeId: 'r1',
+      tieuDe: 'Món ăn ngon',
+      moTa: 'hướng dẫn đơn giản',
+      cacBuoc: [],
+    });
+    expect(kq.hopLe).toBe(false); // "ăn" van la tu cam -> van chan
+    expect(kq.soLanTrungLichSu).toBe(0); // nhung khong tinh ca "hang trang"
+  });
+
+  // Review nho #3: hai tu cung chuan hoa ('đén'/'den') khong duoc nhan doi CSV/display
+  it('hai từ cấm cùng chuẩn hoá -> chỉ ghi 1 dạng, không nhân đôi CSV', async () => {
+    const { service, prisma } = taoService(['đén', 'den']);
+    const kq = await service.kiemTraVaGhiNhan({
+      userId: 'u1',
+      recipeId: 'r1',
+      tieuDe: 'Đén nhà sớm',
+      moTa: '',
+      cacBuoc: [],
+    });
+    expect(kq.hopLe).toBe(false);
+    expect(kq.tuKhoaTrung).toEqual(['đén']);
+    expect(prisma.moderationCase.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ matchedKeywords: 'den' }),
+      }),
+    );
+  });
+
+  // Review nho #5: loi ghi ca lich su khong duoc lam mat phan CHAN —
+  // phan hong fail-open chi danh cho viec DOC danh sach, khong danh cho viec block.
+  it('ghi ca lịch sử thất bại -> vẫn chặn, trả từ trúng (không fail-open phần block)', async () => {
+    const prisma: any = {
+      toxicKeyword: {
+        findMany: jest.fn(async () => [{ id: 'k0', word: 'đồ ngu', createdAt: new Date() }]),
+      },
+      moderationCase: {
+        findMany: jest.fn(async () => []),
+        create: jest.fn(async () => {
+          throw new Error('db down khi ghi ca');
+        }),
+      },
+    };
+    const service = new ModerationService(prisma);
+    const kq = await service.kiemTraVaGhiNhan({
+      userId: 'u1',
+      recipeId: 'r1',
+      tieuDe: 'Món x',
+      moTa: 'cách làm này đồ ngu quá',
+      cacBuoc: [],
+    });
+    expect(kq.hopLe).toBe(false);
+    expect(kq.tuKhoaTrung).toEqual(['đồ ngu']);
+  });
 });
