@@ -21,10 +21,12 @@ export class RecipesService {
     private moderation: ModerationService,
   ) {}
 
-  // Không trả id (UUID) trong list/public endpoints -> FE tự tính STT = index + 1 + page * size
-  // Riêng ADMIN: trả thêm id để thao tác duyệt/cấm (admin là endpoint nội bộ, không public)
-  private listSelect(viewerRole?: string) {
+  // List LUÔN trả id: mobile bấm vào thẻ để mở chi tiết / sửa / xóa công thức.
+  // (Trước đây spec chống dò UUID cố ý bỏ id trong list — đã bỏ theo yêu cầu mobile.)
+  private listSelect() {
     const select: Prisma.RecipeSelect = {
+      id: true,
+      author: { select: { displayName: true, email: true } },
       title: true,
       description: true,
       thumbnailUrl: true,
@@ -41,13 +43,6 @@ export class RecipesService {
       // dinh dưỡng. Chọn đúng 4 field zod `dinhDuongSchema` yêu cầu.
       nutrition: { select: { calories: true, protein: true, carbs: true, fat: true } },
     };
-    // Spec recipes/README.md "GET /recipes (List - KHÔNG CÓ ID)": danh sách công khai
-    // cố tình KHÔNG trả id để chống dò/enum UUID sang endpoint chi tiết.
-    // Chỉ ADMIN (đã đăng nhập) mới thấy id + author để quản trị.
-    if (viewerRole === Role.ADMIN) {
-      select.id = true;
-      select.author = { select: { displayName: true, email: true } };
-    }
     return select;
   }
 
@@ -87,6 +82,9 @@ export class RecipesService {
     if (query.categoryId) {
       where.categoryId = query.categoryId;
     }
+    if (query.authorId) {
+      where.authorId = query.authorId;
+    }
     if (query.tagNames?.length) {
       where.tags = { some: { name: { in: query.tagNames } } };
     }
@@ -109,13 +107,13 @@ export class RecipesService {
 
     const content =
       query.sortBy === 'rating'
-        ? await this.findAllTopRatings(where, query.sortDirection, page, size, viewerRole)
+        ? await this.findAllTopRatings(where, query.sortDirection, page, size)
         : await this.prisma.recipe.findMany({
             where,
             skip: page * size,
             take: size,
             orderBy: this.buildOrderBy(query.sortBy, query.sortDirection),
-            select: this.listSelect(viewerRole),
+            select: this.listSelect(),
           });
 
     return {
@@ -137,7 +135,6 @@ export class RecipesService {
     sortDirection: 'asc' | 'desc',
     page: number,
     size: number,
-    viewerRole: string | undefined,
   ) {
     const candidates = await this.prisma.recipe.findMany({
       where,
@@ -162,22 +159,16 @@ export class RecipesService {
     const pageIds = ranked.slice(page * size, page * size + size).map((r) => r.id);
     if (pageIds.length === 0) return [];
 
-    // Lấy đủ field hiển thị + id tạm để sắp lại đúng thứ tự đã xếp hạng.
+    // Lấy đủ field hiển thị (listSelect đã có id) + sắp lại đúng thứ tự đã xếp hạng.
     const rows = await this.prisma.recipe.findMany({
       where: { id: { in: pageIds } },
-      select: { ...this.listSelect(viewerRole), id: true },
+      select: this.listSelect(),
     });
     const theoId = new Map(rows.map((r) => [r.id, r]));
     // Quá nhiều dòng xếp hạng hơn trang không xảy ra; dòng thừa chỉ là bảo vệ:
-    const trang = pageIds
+    return pageIds
       .map((id) => theoId.get(id))
       .filter((r): r is NonNullable<typeof r> => Boolean(r)) as Array<(typeof rows)[number]>;
-
-    // Không trả id cho viewer không phải ADMIN (khớp listSelect)
-    if (viewerRole !== Role.ADMIN) {
-      return trang.map(({ id: _id, ...rest }) => rest);
-    }
-    return trang;
   }
 
   async findOne(id: string, viewer?: { id?: string; role?: string }) {

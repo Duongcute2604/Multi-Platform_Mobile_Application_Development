@@ -42,6 +42,11 @@ export class RecipeQueryDto {
   @IsString()
   categoryId?: string;
 
+  // Mobile: lọc "Công thức của tôi" theo tác giả (BR-UREC)
+  @IsOptional()
+  @IsString()
+  authorId?: string;
+
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

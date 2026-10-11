@@ -246,3 +246,36 @@ describe('RecipesService.submitForReview kiểm độc tố', () => {
     ).rejects.not.toThrow(/từng bị chặn/);
   });
 });
+
+// Mobile: list phải trả id (bấm thẻ -> chi tiết) + author (hiện tên tác giả),
+// và lọc theo authorId cho màn "Công thức của tôi" (BR-UREC).
+describe('RecipesService.findAll id + authorId', () => {
+  const taoService = (rows: unknown[]) => {
+    const prisma: any = {
+      recipe: {
+        findMany: jest.fn().mockResolvedValue(rows),
+        count: jest.fn().mockResolvedValue(rows.length),
+      },
+    };
+    return { service: new RecipesService(prisma, { kiemTraVaGhiNhan: jest.fn() } as any), prisma };
+  };
+
+  it('viewer thường (không role) vẫn nhận id + author trong list', async () => {
+    const { service } = taoService([
+      { id: 'r1', title: 'm1', author: { displayName: 'An', email: 'an@x.com' } },
+    ]);
+    const query = plainToInstance(RecipeQueryDto, { page: 0, size: 20 });
+    const ketQua = await service.findAll(query);
+    expect((ketQua.content[0] as any).id).toBe('r1');
+    expect((ketQua.content[0] as any).author).toEqual({ displayName: 'An', email: 'an@x.com' });
+  });
+
+  it('authorId trong query được đẩy xuống where của Prisma', async () => {
+    const { service, prisma } = taoService([]);
+    const query = plainToInstance(RecipeQueryDto, { page: 0, size: 20, authorId: 'u-123' });
+    await service.findAll(query);
+    expect(prisma.recipe.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ authorId: 'u-123' }) }),
+    );
+  });
+});
