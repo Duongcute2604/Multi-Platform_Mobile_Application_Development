@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Bài tuần 9 - StyleSheet và Flexbox trong React Native</title>
+<style>
+  body { font-family: 'Times New Roman', serif; font-size: 13pt; }
+  h1 { text-align: center; font-size: 16pt; }
+  h2 { font-size: 14pt; margin-top: 20pt; }
+  h3 { font-size: 13pt; margin-top: 14pt; }
+  p { margin: 6pt 0; text-align: justify; }
+  li { margin: 3pt 0; text-align: justify; }
+  .meta { text-align: center; color: #444444; }
+  .note { color: #444444; font-style: italic; }
+  pre.code { font-family: Consolas, monospace; font-size: 9.5pt; background: #F2F2F2; border: 1px solid #CCCCCC; padding: 8pt; white-space: pre-wrap; }
+  table { border-collapse: collapse; width: 100%; margin: 8pt 0; }
+  th, td { border: 1px solid #888888; padding: 4pt 6pt; font-size: 12pt; vertical-align: top; }
+  th { background: #EAEAEA; }
+</style>
+</head>
+<body>
+
+<h1>BÀI TUẦN 9 - STYLESHEET VÀ FLEXBOX TRONG REACT NATIVE</h1>
+<p class="meta">Họ tên: .........................&nbsp;&nbsp;&nbsp; Lớp: .........&nbsp;&nbsp;&nbsp; MSSV: .....................</p>
+<p class="meta">Môn: Lập trình di động - Bài tuần 9</p>
+
+<h2>PHẦN A - CÂU HỎI LÝ THUYẾT</h2>
+
+<h3>Câu 1. Vai trò của StyleSheet và vì sao ưu tiên StyleSheet.create()</h3>
+<p><b>StyleSheet</b> là API chuẩn của React Native dùng để khai báo và quản lý các style (đối tượng style) thay vì viết trực tiếp inline trong JSX. StyleSheet có các vai trò sau:</p>
+<ul>
+  <li><b>Tách bạch cấu trúc và trang trí:</b> JSX mô tả cấu trúc giao diện, styles mô tả hình thức; style được khai báo tập trung ở cuối file nên code gọn gàng, dễ đọc, dễ sửa.</li>
+  <li><b>Tăng hiệu năng:</b> <i>StyleSheet.create()</i> trả về object bất biến và React Native ánh xạ mỗi style thành một <b>ID</b>. Khi render, style được <b>tham chiếu theo ID</b> chứ không tạo một object mới mỗi lần render. Nhờ đó giảm số object rác, giảm thời gian so sánh và re-render - đặc biệt quan trọng với danh sách dài (FlatList, ScrollView).</li>
+  <li><b>Kiểm tra lỗi sớm:</b> ở chế độ development, <i>StyleSheet.create()</i> kiểm tra kiểu và giá trị của từng thuộc tính (ví dụ truyền chuỗi vào <i>fontSize</i>, giá trị màu sai) và cảnh báo ngay khi chạy.</li>
+  <li><b>Dễ tái sử dụng và tổ chức:</b> style có thể export/import giữa các file và được gộp (flatten) lại một cách có trật tự.</li>
+</ul>
+<p><b>Vì sao trong dự án thực tế nên ưu tiên StyleSheet.create() thay vì inline style:</b></p>
+<ul>
+  <li><b>Hiệu năng:</b> inline style tạo một object mới mỗi lần render, làm component con re-render và phải gửi lại dữ liệu style; StyleSheet tránh được việc này nhờ tham chiếu ID.</li>
+  <li><b>Dễ bảo trì:</b> style nằm tách khỏi JSX, sửa một chỗ là cả màn hình đổi; tránh lặp code style ở nhiều nơi.</li>
+  <li><b>Nhất quán (thiết kế đồng bộ):</b> dự án dùng chung một bộ màu, khoảng cách, cỡ chữ - thay đổi tập trung, giao diện nhất quán.</li>
+  <li><b>Dễ gỡ lỗi:</b> lỗi style chỉ ra đúng tên biến style trong file styles thay vì phải lục trong đoạn JSX dài.</li>
+</ul>
+<p class="note">Vẫn có thể dùng style inline cho vài trường hợp động (giá trị tính theo state/props), nhưng chỉ nên viết phần thay đổi trong một mảng style, ví dụ: style={[styles.button, isActive &amp;&amp; styles.active]}.</p>
+
+<h3>Câu 2. Prop style và thứ tự ưu tiên khi truyền mảng style</h3>
+<p>Trong React Native, prop <b>style</b> có thể nhận: một object style trực tiếp, một style đã tạo từ <i>StyleSheet.create()</i>, hoặc <b>mảng nhiều style</b>.</p>
+<p>Khi truyền một mảng nhiều style, React Native sẽ <b>gộp (flatten) từ trái sang phải</b> theo nguyên tắc:</p>
+<ul>
+  <li><b>Thuộc tính cùng tên ở phần tử sau sẽ ghi đè (override) phần tử trước.</b></li>
+  <li>Thuộc tính nào chỉ có ở phần tử sau thì được <b>bổ sung</b> thêm; thuộc tính chỉ có ở phần tử trước vẫn được giữ.</li>
+</ul>
+<pre class="code">// styles.box: nền xám; styles.boxActive: nền xanh, viền xanh
+&lt;View style={[styles.box, styles.boxActive]}&gt;   // nền xanh thắng (phần tử sau ghi đè)
+&lt;View style={[styles.button, disabled &amp;&amp; styles.disabled]}&gt;   // style có điều kiện
+&lt;View style={[styles.box, { backgroundColor: props.color }]}&gt;  // value động ghi đè cuối</pre>
+<p>Như vậy, <b>thứ tự rất quan trọng</b>: phần tử đứng sau luôn có quyền quyết định cuối cùng đối với thuộc tính bị trùng. Đây cũng là cách component con nhận style từ component cha: <i>style={[styles.default, style]}</i> để style của cha nằm sau và ghi đè style mặc định.</p>
+
+<h3>Câu 3. Export, import StyleSheet và khi nào tách style ra file riêng</h3>
+<p>Sau khi khai báo <i>const styles = StyleSheet.create({...})</i>, ta <b>export</b> nó để file khác dùng lại, rồi <b>import</b> về khi cần:</p>
+<pre class="code">// theme.js
+export const colors = { primary: '#2563EB', background: '#F1F5F9' };
+export default styles;          // export mặc định
+
+// LoginScreen.js
+import styles from './LoginScreen.styles';       // import mặc định
+import { colors } from '../theme';               // import có tên</pre>
+<p>Có hai cách: <b>export mặc định</b> (mỗi file một styles chính, import không cần ngoặc) và <b>export có tên</b> (một file export nhiều nhóm: colors, spacing, styles...). Một file cũng có thể export nhiều biến style dùng chung.</p>
+<p><b>Nên tách style ra file riêng khi:</b></p>
+<ul>
+  <li>Style <b>dùng lại ở nhiều component hoặc nhiều màn hình</b> (card, ô nhập, nút bấm dùng chung) - tách một lần, dùng nhiều nơi.</li>
+  <li>Cần một <b>theme chung</b> (màu, khoảng cách, bo góc, cỡ chữ) - sửa một file là cả ứng dụng đồng bộ theo.</li>
+  <li><b>File component quá dài</b> (trăm vài dòng trở lên) - tách styles ra để code ngắn gọn, dễ đọc, dễ review.</li>
+  <li><b>Nhiều người cùng phát triển</b> - cần một nguồn style duy nhất để giao diện nhất quán, tránh mỗi người một kiểu.</li>
+</ul>
+<p class="note">Không cần tách khi style rất ngắn, chỉ dùng cho đúng một màn hình duy nhất - khi đó để trong file component cho dễ theo dõi.</p>
+
+<h3>Câu 4. Truyền style qua props cho component con</h3>
+<p>Component con có thể <b>nhận style từ component cha thông qua props</b> rồi gộp vào style mặc định của mình. Pattern chuẩn là để style mặc định đứng trước, style truyền vào đứng sau để ghi đè:</p>
+<pre class="code">// Button.js - nút bấm dùng chung
+function Button({ title, onPress, style, textStyle }) {
+  return (
+    &lt;TouchableOpacity style={[styles.button, style]}&gt;
+      &lt;Text style={[styles.text, textStyle]}&gt;{title}&lt;/Text&gt;
+    &lt;/TouchableOpacity&gt;
+  );
+}
+
+// Component cha dùng lại nút ở nhiều nơi, mỗi nơi một kiểu:
+&lt;Button title="Đăng nhập" style={styles.loginButton} /&gt;
+&lt;Button title="Hủy" style={styles.cancelButton} textStyle={{ fontSize: 14 }} /&gt;</pre>
+<p><b>Việc cho phép truyền style và textStyle giúp component linh hoạt hơn vì:</b></p>
+<ul>
+  <li>Một component duy nhất được <b>dùng lại ở nhiều màn hình</b> với màu, kích thước, khoảng cách khác nhau.</li>
+  <li>Không phải <b>sửa component con</b> hay <b>nhân bản code</b> cho từng biến thể nút.</li>
+  <li>Phần style mặc định giữ sự <b>nhất quán</b>, component cha chỉ ghi đè vài thuộc tính cần thiết.</li>
+  <li>Kết hợp với các props khác (variant, disabled, onPress...) nên một component có thể đáp ứng nhiều trường hợp dùng khác nhau.</li>
+</ul>
+<p class="note">Lưu ý: style truyền vào nằm cuối mảng nên luôn ghi đè được; nên chỉ cho phép component cha chỉnh phần trình bày, còn hành vi (bấm, tắt/mở) truyền bằng props riêng.</p>
+
+<h3>Câu 5. Vai trò của Flexbox và các thuộc tính quan trọng</h3>
+<p>Flexbox là mô hình layout mặc định của React Native, giúp sắp xếp các phần tử theo hàng hoặc cột và <b>tự co giãn theo kích thước màn hình</b> - rất thích hợp cho giao diện chạy trên nhiều kích thước màn hình khác nhau.</p>
+<p><b>Lưu ý:</b> trên web mặc định là hàng ngang (row), còn React Native mặc định là <b>đứng dọc (column)</b>.</p>
+<table>
+  <tr><th>Thuộc tính</th><th>Ý nghĩa</th></tr>
+  <tr><td>flexDirection</td><td>Định hướng phân bổ của container: 'column' (mặc định, xếp dọc), 'row' (xếp ngang), 'row-reverse', 'column-reverse'.</td></tr>
+  <tr><td>justifyContent</td><td>Phân bổ khoảng trống theo <b>trục chính (main axis)</b>: 'flex-start', 'center', 'flex-end', 'space-between', 'space-around', 'space-evenly'. Với column thì tác động theo chiều dọc.</td></tr>
+  <tr><td>alignItems</td><td>Căn các phần tử theo <b>trục ngang (cross axis)</b>: 'stretch' (mặc định, kéo giãn theo trục ngang), 'center', 'flex-start', 'flex-end'.</td></tr>
+  <tr><td>flex</td><td>Chỉ định <b>tỉ lệ chiếm không gian còn lại</b> của phần tử. flex: 1 nghĩa là chiếm đều phần còn lại; dùng để chia màn hình thành nhiều cột (vd: cột trái 1, cột phải 2) hay để card co giãn đều nhau.</td></tr>
+  <tr><td>flexWrap</td><td>'nowrap' (mặc định - không xuống dòng) hoặc 'wrap' - <b>đủ chỗ thì nằm ngang, hết chỗ thì tự xuống dòng</b>. Đây là chìa khóa làm layout responsive: 2 cột trên máy tính bảng, 1 cột trên điện thoại.</td></tr>
+</table>
+<p><b>Áp dụng cho nhiều kích thước màn hình:</b> kết hợp <i>flexWrap: 'wrap'</i> + <i>flexBasis</i> (kích thước tối thiểu) + <i>flexGrow</i> (mở rộng) + <i>maxWidth</i> (giới hạn chiều rộng), đồng thời dùng <i>useWindowDimensions()</i> để đọc chiều rộng màn hình thực tế rồi đổi layout cho phù hợp. Ngoài ra, vì React Native không tự cuộn phần tử tràn (không có overflow như web) nên màn hình dài cần bọc trong <i>ScrollView</i>.</p>
+
+<h2>PHẦN B - BÀI TẬP LUYỆN TẬP THỰC HÀNH</h2>
+
+<h3>Bài 1 - Màn hình Login (mức dễ)</h3>
+<p><b>Yêu cầu:</b> màn hình Login gồm tiêu đề ứng dụng, hai ô nhập thông tin, một nút đăng nhập và dòng "Forgot password"; toàn bộ style chính viết bằng <i>StyleSheet.create()</i> (không viết hết bằng inline).</p>
+<p><b>Các thuộc tính được sử dụng theo yêu cầu:</b></p>
+<table>
+  <tr><th>Thuộc tính</th><th>Ý nghĩa</th><th>Dùng ở đâu trong LoginScreen</th></tr>
+  <tr><td>backgroundColor</td><td>Màu nền</td><td>styles.screen (nền xám nhạt), styles.form (thẻ trắng), styles.button (nền xanh), styles.input</td></tr>
+  <tr><td>fontSize</td><td>Cỡ chữ</td><td>styles.title (28), styles.label (14), styles.input (15), styles.buttonText (16)</td></tr>
+  <tr><td>fontWeight</td><td>Độ đậm chữ</td><td>styles.title ('700'), styles.label ('600'), styles.buttonText ('700')</td></tr>
+  <tr><td>padding</td><td>Khoảng giãn bên trong</td><td>styles.screen (24), styles.form (24), styles.input (paddingHorizontal 16), styles.button (paddingVertical 14)</td></tr>
+  <tr><td>margin</td><td>Khoảng giãn bên ngoài</td><td>styles.subtitle (marginBottom 24), styles.label (marginBottom 6), styles.input (marginBottom 16), styles.button (marginTop 8)</td></tr>
+  <tr><td>borderWidth</td><td>Độ dày viền</td><td>styles.form (1), styles.input (1)</td></tr>
+  <tr><td>borderRadius</td><td>Bo tròn góc</td><td>styles.form (16), styles.input và styles.button (12)</td></tr>
+  <tr><td>justifyContent</td><td>Căn theo trục chính</td><td>styles.screen ('center' - canh giữa theo chiều dọc), styles.button ('center')</td></tr>
+  <tr><td>alignItems</td><td>Căn theo trục ngang</td><td>styles.screen ('center'), styles.forgot ('flex-end' - đẩy "Forgot password" sang phải), styles.button ('center')</td></tr>
+</table>
+<p><b>Code - src/screens/LoginScreen.js:</b></p>
+<pre class="code">@@LOGIN@@</pre>
+<p><b>Code - App.js (điểm bắt đầu của ứng dụng):</b></p>
+<pre class="code">@@APP@@</pre>
+<p class="note">Ảnh chụp màn hình kết quả: thư mục anh, file "1-login-man-hinh-nho.jpg" (kèm theo bài nộp, không chèn vào Word).</p>
+
+<h3>Bài 2 - Profile card + Settings list (mức trung bình)</h3>
+<p><b>Yêu cầu:</b> dựng lại một UI đơn giản gồm thẻ hồ sơ (Profile card) và danh sách cài đặt (Settings list); dùng StyleSheet (không inline quá nhiều); layout Flexbox chuẩn; responsive - vẫn đẹp khi đổi kích thước màn hình.</p>
+<p><b>Cách làm responsive:</b></p>
+<ul>
+  <li>Dùng <i>useWindowDimensions()</i> để đọc chiều rộng màn hình thực tế của thiết bị/giả lập.</li>
+  <li>Màn hình hẹp (&lt; 700px - điện thoại): hai thẻ <b>xếp dọc</b>, mỗi thẻ chiếm 100% chiều rộng (columnFull).</li>
+  <li>Màn hình rộng (&gt;= 700px - máy tính bảng, máy tính): container chuyển sang <i>flexDirection: 'row'</i> + <i>flexWrap: 'wrap'</i>, mỗi thẻ có <i>flexBasis: 300</i> + <i>flexGrow: 1</i> nên hai thẻ <b>nằm ngang và chia đều</b> chiều rộng.</li>
+  <li>Khung nội dung giới hạn <i>maxWidth: 960</i> và căn giữa để chữ không bị giãn quá trên màn hình lớn; bọc ngoài bằng <i>ScrollView</i> để cuộn được khi nội dung dài.</li>
+  <li>Flexbox thể hiện rõ: hàng 3 chỉ số trong Profile card dùng <i>flexDirection: 'row'</i> + mỗi ô <i>flex: 1</i>; dòng cài đặt dùng <i>flexDirection: 'row'</i> + tiêu đề <i>flex: 1</i> để đẩy giá trị/mũi tên sang phải.</li>
+</ul>
+<p><b>Code - src/theme.js (style dùng chung):</b></p>
+<pre class="code">@@THEME@@</pre>
+<p><b>Code - src/components/ProfileCard.js:</b></p>
+<pre class="code">@@PROFILE_CARD@@</pre>
+<p><b>Code - src/components/SettingsList.js:</b></p>
+<pre class="code">@@SETTINGS@@</pre>
+<p><b>Code - src/screens/ProfileSettingsScreen.js (phần responsive):</b></p>
+<pre class="code">@@PROFILE_SETTINGS@@</pre>
+<p class="note">Ảnh chụp màn hình kết quả: thư mục anh - "2-profile-settings-man-hinh-nho.jpg" (màn hình nhỏ 390x844 - 2 thẻ xếp dọc) và "2-profile-settings-man-hinh-lon.jpg" (màn hình lớn 1440x900 - 2 thẻ nằm ngang), kèm theo bài nộp, không chèn vào Word.</p>
+
+<h2>PHẦN C - CẤU TRÚC DỰ ÁN VÀ HƯỚNG DẪN CHẠY</h2>
+<pre class="code">Bai-tuan-9/
+|- App.js                      Diem bat dau, chon hien thi Bai 1 hoac Bai 2
+|- index.js                    Dang ky App vao Expo
+|- package.json, app.json
+|- src/
+|  |- theme.js                 Màu, khoảng cách, bo góc dung chung
+|  |- screens/
+|  |  |- LoginScreen.js        Bai tap 1
+|  |  +- ProfileSettingsScreen.js   Bai tap 2
+|  +- components/
+|     |- ProfileCard.js
+|     +- SettingsList.js
+|- anh/                        Anh chup man hình nop bai
+|- mockup/                     Ban HTML xem truoc giao dien (co the xoa)</pre>
+<p><b>Các bước chạy:</b></p>
+<ol>
+  <li>Cài Node.js (nếu chưa có), rồi chạy <i>npm install</i> trong thư mục dự án.</li>
+  <li>Chạy <i>npx expo start</i>, bấm <b>a</b> để mở trên giả lập Android, <b>i</b> cho iOS, <b>wb</b> cho trình duyệt.</li>
+  <li>Ứng dụng mở ở màn hình Login (Bài 1); bấm nút "Bài 2 - Profile + Settings" ở góc dưới để sang màn hình thứ hai. Thanh này chỉ phục vụ demo, có thể xoá khi nộp bài.</li>
+  <li>Đổi kích thước cửa sổ giả lập (hoặc xoay ngang máy tính bảng) để kiểm tra tính responsive của Bài 2.</li>
+</ol>
+
+</body>
+</html>

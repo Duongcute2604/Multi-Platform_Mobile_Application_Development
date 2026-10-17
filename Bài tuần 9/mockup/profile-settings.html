@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Profile + Settings - Bài tập 2</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #F1F5F9; }
+  .content { width: 100%; max-width: 960px; margin: 0 auto; padding: 16px 16px 96px; }
+  .pageTitle { font-size: 22px; font-weight: 700; color: #0F172A; margin: 0 0 16px; }
+
+  /* Layout giống hệt StyleSheet: dọc trên màn hình hẹp, ngang + wrap trên màn hình rộng */
+  .layout { display: flex; flex-direction: column; gap: 16px; }
+  .col { width: 100%; }
+  @media (min-width: 700px) {
+    .content { padding: 24px 24px 96px; }
+    .layout { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 24px; }
+    .col { flex: 1 1 300px; }
+  }
+
+  .card { background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; }
+
+  /* Profile card */
+  .profile { padding: 24px; display: flex; flex-direction: column; align-items: center; }
+  .avatar { width: 72px; height: 72px; border-radius: 999px; background: #2563EB; color: #fff; font-size: 24px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .name { font-size: 18px; font-weight: 700; color: #0F172A; margin: 16px 0 0; }
+  .role { font-size: 14px; color: #64748B; margin: 4px 0 0; }
+  .stats { display: flex; flex-direction: row; width: 100%; margin-top: 24px; padding-top: 16px; border-top: 1px solid #E2E8F0; }
+  .stat { flex: 1; text-align: center; }
+  .statValue { font-size: 16px; font-weight: 700; color: #0F172A; }
+  .statLabel { font-size: 12px; color: #64748B; }
+  .followButton { width: 100%; margin-top: 24px; padding: 12px; border-radius: 12px; background: #2563EB; color: #fff; font-size: 15px; font-weight: 700; text-align: center; }
+
+  /* Settings list */
+  .settings { padding: 8px 16px; }
+  .heading { font-size: 13px; font-weight: 700; color: #64748B; text-transform: uppercase; padding: 8px; margin: 0; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 12px 8px; }
+  .rowDivider { border-bottom: 1px solid #F1F5F9; }
+  .icon { width: 36px; height: 36px; border-radius: 999px; background: #F1F5F9; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .rowTitle { flex: 1; font-size: 15px; color: #0F172A; }
+  .rowValue { font-size: 14px; color: #64748B; }
+  .chevron { font-size: 20px; color: #64748B; }
+</style>
+</head>
+<body>
+  <div class="content">
+    <div class="pageTitle">Hồ sơ &amp; Cài đặt</div>
+
+    <div class="layout">
+      <div class="col">
+        <div class="card profile">
+          <div class="avatar">MA</div>
+          <div class="name">Nguyễn Minh Anh</div>
+          <div class="role">Frontend Developer</div>
+          <div class="stats">
+            <div class="stat"><div class="statValue">128</div><div class="statLabel">Bài viết</div></div>
+            <div class="stat"><div class="statValue">12.5K</div><div class="statLabel">Followers</div></div>
+            <div class="stat"><div class="statValue">340</div><div class="statLabel">Following</div></div>
+          </div>
+          <div class="followButton">Theo dõi</div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card settings">
+          <div class="heading">Cài đặt</div>
+          <div class="row rowDivider">
+            <div class="icon">👤</div><div class="rowTitle">Thông tin cá nhân</div><div class="chevron">›</div>
+          </div>
+          <div class="row rowDivider">
+            <div class="icon">🛡️</div><div class="rowTitle">Bảo mật</div><div class="chevron">›</div>
+          </div>
+          <div class="row rowDivider">
+            <div class="icon">🌐</div><div class="rowTitle">Ngôn ngữ</div><div class="rowValue">Tiếng Việt</div><div class="chevron">›</div>
+          </div>
+          <div class="row rowDivider">
+            <div class="icon">🎨</div><div class="rowTitle">Giao diện</div><div class="rowValue">Sáng</div><div class="chevron">›</div>
+          </div>
+          <div class="row">
+            <div class="icon">🚪</div><div class="rowTitle">Đăng xuất</div><div class="chevron">›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

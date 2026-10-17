@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "BaiTuan10",
+    "slug": "baituan10",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Ứng dụng cần quyền truy cập thư viện ảnh để bạn chọn ảnh."
+      }
+    },
+    "android": {
+      "permissions": ["READ_EXTERNAL_STORAGE"]
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ứng dụng cần quyền truy cập thư viện ảnh để bạn chọn ảnh."
+        }
+      ]
+    ]
+  }
+}

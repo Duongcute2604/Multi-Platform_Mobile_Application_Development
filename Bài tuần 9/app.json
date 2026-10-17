@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Bai-tuan-9",
+    "slug": "bai-tuan-9",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.example.baituan9"
+    },
+    "ios": {
+      "bundleIdentifier": "com.example.baituan9"
+    }
+  }
+}
